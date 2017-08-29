@@ -25,8 +25,6 @@ AFRAME.registerComponent('three-ar', {
         }
         this.arDisplay.getFrameData(this.frameData);
 
-        camera.el.object3D.matrixAutoUpdate = false;
-
         // Apply the pose position so that other A-Frame components can see the values.
         var position = this.frameData.pose.position;
         camera.el.setAttribute('position', { x: position['0'], y: position['1'], z: position['2'] });
@@ -46,8 +44,6 @@ AFRAME.registerComponent('three-ar', {
             y: THREE.Math.RAD2DEG * this.poseEuler.y,
             z: THREE.Math.RAD2DEG * this.poseEuler.z
         });
-
-        camera.el.object3D.matrixAutoUpdate = true;
 
         // Apply the projection matrix.
         // Can use either left or right projection matrix; pick left for now.
@@ -73,7 +69,10 @@ AFRAME.registerComponent('three-ar', {
             var scene = self.el.sceneEl;
 
             // Take over the scene camera, if so directed.
-            if (self.data.takeOverCamera) { self.takeOverCamera(scene.camera); }
+            // But wait a tick, because otherwise injected camera will not be present.
+            if (self.data.takeOverCamera) {
+              setTimeout(function () { self.takeOverCamera(scene.camera); });
+            }
 
             // Modify the scene renderer to allow ARView video passthrough.
             scene.renderer.alpha = true;
