@@ -1,9 +1,16 @@
-# aframe-three-ar
-Basic [A-Frame](https://aframe.io) support for the new [three.ar.js](https://github.com/google-ar/three.ar.js) library and [WebARonARKit / WebARonARCore browsers](https://developers.google.com/ar/develop/web/getting-started).
+# aframe-ar
+Basic [A-Frame](https://aframe.io) support for browser-based augmented reality (AR), using the new [three.ar.js](https://github.com/google-ar/three.ar.js) library and [WebARonARKit / WebARonARCore browsers](https://developers.google.com/ar/develop/web/getting-started).
+
+Usage:
+```
+<a-scene ar>
+  <a-sphere radius="0.01" position="0 0.005 -0.5"></a-sphere>
+<a-scene>  
+```
 
 Example:
-- https://aframe-three-ar-example.glitch.me
-- - (remix with Glitch here: https://glitch.com/edit/#!/aframe-three-ar-example?path=public/index.html)
+- https://aframe-ar.glitch.me
+- - (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar?path=public/index.html)
 
 Reference links:
 - https://aframe.io
