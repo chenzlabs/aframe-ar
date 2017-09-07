@@ -1,4 +1,4 @@
-require('./aframe-three-ar');
-require('./aframe-ar');
+require('./three-ar');
+require('./ar');
 require('./ar-raycaster');
 
