@@ -4,8 +4,6 @@
     <script src="//rawgit.com/chenzlabs/aframe/master/dist/aframe-master.js"></script>
     <!-- Include three.ar.js library. -->
     <script src="//rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
-    <!-- Include my experimental A-Frame three.ar.js scene component with plane events. -->
-    <script src="//rawgit.com/chenzlabs/aframe-ar/experimental-planes/dist/aframe-three-ar-planes.js"></script>
     <!-- Include my A-Frame three.ar.js scene component. -->
     <script src="//rawgit.com/chenzlabs/aframe-ar/experimental-planes/dist/aframe-ar.js"></script>
     
@@ -41,8 +39,8 @@
     </script>
   </head>
   <body>
-    <!-- Use three-ar with the scene, and don't show the usual VR icon. -->
-    <a-scene three-ar-planes vr-mode-ui="enabled: false">
+    <!-- Use ar with the scene, and don't show the usual VR icon. -->
+    <a-scene ar>
       <!-- Wrap in a reality -->
       <a-entity id="reality">
         <!-- Wrap in a locality -->
