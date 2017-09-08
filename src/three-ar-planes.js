@@ -3,8 +3,7 @@ AFRAME.registerComponent('three-ar-planes', {
 
   init: function () {
     // Remember planes when we see them.
-    // Map, so we can enumerate it properly.
-    this.planes = new Map();
+    this.planes = {};
   },
 
   tick: (function (t, dt) {
@@ -43,6 +42,9 @@ AFRAME.registerComponent('three-ar-planes', {
         // Get plane identifier and conform.
         planespec.identifier = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
 	var id = planespec.identifier;
+        // Copy plane timestamp, if available.
+        if (plane.timestamp) { planespec.timestamp = plane.timestamp; }
+	// Make the position, orientation and extent data conform.
         if (plane.transform) {
           // ARKit exposes transform, not position and orientation.
           tempMat4.fromArray(plane.transform);
@@ -64,8 +66,13 @@ AFRAME.registerComponent('three-ar-planes', {
         // Note that we've seen it.
         seenThese[id] = true;
         // Figure out whether added or updated.
-        var updatedThis = !this.planes.has(id);
-        if (this.planes.has(id)) {
+        if (this.planes[id]) {
+          // If we've seen it before, and we have timestamp values, just check those
+          if (this.planes[id].timestamp) {
+            if (planespec.timestamp !== this.planes[id].timestamp) {
+              updatedThese.push(planespec);
+            }
+	  } else
           // If we've seen it before, we should have it cached in this.planes already, to compare against.
           if (!AFRAME.deepEqual(planespec, this.planes[id])) {
             updatedThese.push(planespec);
@@ -76,17 +83,14 @@ AFRAME.registerComponent('three-ar-planes', {
           addedThese.push(planespec);
         }
       }
+
       // To find ones we've removed, we need to scan this.planes.
-      this.planes.forEach(function (key, value, map) {
-        if (!seenThese[key]) {
-          removedThese.push(value);
-        }
-      });
-      // Remove any we should from the cache, afterward to avoid iteration races.
       var self = this;
-      removedThese.forEach(function (plane) {
-        var id = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
-        self.planes.delete(id);
+      Object.keys(self.planes).forEach(function (key) {
+        if (!seenThese[key]) {
+          removedThese.push(self.planes[key]);
+          delete self.planes[key];
+        }
       });
 
       // OK, now we should have separate added / updated / removed lists,
