@@ -53,9 +53,9 @@ AFRAME.registerComponent('three-ar-planes', {
           plane.quaternion.fromArray(plane.orientation);
         }
         plane.rotation.setFromQuaternion(plane.quaternion);
-        plane.rotation.x *= THREE.Math.RAD2DEG;
-        plane.rotation.y *= THREE.Math.RAD2DEG;
-        plane.rotation.z *= THREE.Math.RAD2DEG;
+        if (plane.rotation.x) { plane.rotation.x *= THREE.Math.RAD2DEG; }
+        if (plane.rotation.y) { plane.rotation.y *= THREE.Math.RAD2DEG; }
+        if (plane.rotation.z) { plane.rotation.z *= THREE.Math.RAD2DEG; }
         plane.extent3.set(plane.extent[0], 0, plane.extent[1]);
 
         var planeExistsAlready = this.planes.has(plane.identifier);
