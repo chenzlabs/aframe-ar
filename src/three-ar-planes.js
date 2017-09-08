@@ -67,7 +67,7 @@ AFRAME.registerComponent('three-ar-planes', {
             if (plane.polygon) { planespec.vertices = plane.polygon; } 
             else if (plane.vertices) { planespec.vertices = plane.vertices; }
           } else {
-            // Make planespec strinfigy/parse clone friendly.
+            // Make planespec stringify/parse clone friendly.
             planespec.position = [plane.position['0'], plane.position['1'], plane.position['2']];
             planespec.orientation = [plane.orientation['0'], plane.orientation['1'], plane.orientation['2'], plane.orientation['3']];
             planespec.extent = [plane.extent['0'], plane.extent['1']];
