@@ -24,6 +24,9 @@ AFRAME.registerComponent('three-ar-planes', {
       if (!threear || !threear.arDisplay) { return; }
       var arDisplay = threear.arDisplay;
 
+      // Get the list of planes.
+      var planes = arDisplay.getPlanes ? arDisplay.getPlanes() : arDisplay.anchors_;
+
       // Ideally we would have either events, or separate lists for added / updated / removed.
       var addedThese = [];
       var updatedThese = [];
@@ -33,37 +36,50 @@ AFRAME.registerComponent('three-ar-planes', {
       // try to keep track ourselves.
       var seenThese = {};
       var i;
+
       // Iterate over the available planes.
-      var planes = arDisplay.getPlanes ? arDisplay.getPlanes() : arDisplay.anchors_;
       for (i=0; planes && i<planes.length; i++) {
         var plane = planes[i];
-        // Force plane conformance to common spec (almost latest spec).
+
+        // Force plane conformance to latest spec.
+        // (Hopefully soon, this will no longer be required.)
         var planespec = {};
         // Get plane identifier and conform.
         planespec.identifier = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
-	var id = planespec.identifier;
         // Copy plane timestamp, if available.
         if (plane.timestamp) { planespec.timestamp = plane.timestamp; }
 	// Make the position, orientation and extent data conform.
         if (plane.transform) {
           // ARKit exposes transform, not position and orientation.
+          // We don't have change timestamps, so planespec needs to be JSON stringify/parse cloneable.
           tempMat4.fromArray(plane.transform);
           tempMat4.decompose(tempPosition, tempQuaternion, tempScale);
           planespec.position = [tempPosition.x, tempPosition.y, tempPosition.z];
           planespec.orientation = [tempQuaternion._x, tempQuaternion._y, tempQuaternion._z, tempQuaternion._w];
           planespec.extent = plane.extent;
         } else {
-          // Draft ARCore exposes arrays as maps for some reason.
-          // Interestingly, forEach iterates over values correctly.
-          planespec.position = [plane.position['0'], plane.position['1'], plane.position['2']];
-          planespec.orientation = [plane.orientation['0'], plane.orientation['1'], plane.orientation['2'], plane.orientation['3']];
-          planespec.extent = [plane.extent['0'], plane.extent['1']];
-          if (plane.polygon) {
-            planespec.vertices = [];
-            plane.polygon.forEach(function (n) { planespec.vertices.push(n); });
+          // Draft ARCore exposes typed arrays, which JSON stringify/parse hates.
+          // (However, if we can rely on timestamps for update check, we don't need to worry about that.)
+          if (planespec.timestamp !== undefined) {
+            planespec.position = plane.position;
+            planespec.orientation = plane.orientation;
+            planespec.extent = plane.extent;
+            if (plane.polygon) { planespec.vertices = plane.polygon; } 
+            else if (plane.vertices) { planespec.vertices = plane.vertices; }
+          } else {
+            // Make planespec strinfigy/parse clone friendly.
+            planespec.position = [plane.position['0'], plane.position['1'], plane.position['2']];
+            planespec.orientation = [plane.orientation['0'], plane.orientation['1'], plane.orientation['2'], plane.orientation['3']];
+            planespec.extent = [plane.extent['0'], plane.extent['1']];
+            if (plane.polygon) {
+              planespec.vertices = [];
+              plane.polygon.forEach(function (n) { planespec.vertices.push(n); });
+            } else if (plane.vertices) { planespec.vertices = plane.vertices; }
           }
         }
+
         // Note that we've seen it.
+	var id = planespec.identifier;
         seenThese[id] = true;
         // Figure out whether added or updated.
         if (this.planes[id]) {
@@ -74,12 +90,13 @@ AFRAME.registerComponent('three-ar-planes', {
             }
 	  } else
           // If we've seen it before, we should have it cached in this.planes already, to compare against.
-          if (!AFRAME.deepEqual(planespec, this.planes[id])) {
+          if (!AFRAME.utils.deepEqual(planespec, this.planes[id])) {
             updatedThese.push(planespec);
           }
         } else {
           // Remember by cloning the plane into this.planes.
-          this.planes[id] = JSON.parse(JSON.stringify(planespec));
+          // If there is a timestamp to check, we don't need to stringify/parse clone for AFRAME.utils.deepEqual.
+          this.planes[id] = planespec.timestamp !== undefined ? planespec : JSON.parse(JSON.stringify(planespec));
           addedThese.push(planespec);
         }
       }
