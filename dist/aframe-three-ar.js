@@ -61,8 +61,14 @@
 	    },
 
 	    init: function () {
-	        if (this.el.sceneEl.hasLoaded) { this.onceSceneLoaded(); }
-	        else { this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded.bind(this)); }
+	        this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
+	        if (this.el.sceneEl.hasLoaded) {
+	            console.log('three-ar: hasLoaded, setTimeout');
+	            setTimeout(this.onceSceneLoaded);
+	        } else {
+	            console.log('three-ar: !hasLoaded, addEventListener');
+	            this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
+	        }
 	    },
 
 	    tick: function (t, dt) {
