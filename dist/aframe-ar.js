@@ -457,8 +457,9 @@
 	      // At least one hit.  For now, only process the first AR hit.
 	      transform.fromArray(hit[0].modelMatrix);
 	      transform.decompose(hitpoint, hitquat, hitscale);
+	      this.el.object3D.worldToLocal(hitpoint); // FIXME: is this right?
 	      return [{
-	        distance: hitpoint.distanceTo(this.el.object3D.position), // Is that right point?
+	        distance: hitpoint.distanceTo(this.el.object3D.position), // FIXME: is this right?
 	        point: hitpoint, // Vector3
 	        object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
 	/*
