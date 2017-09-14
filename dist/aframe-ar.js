@@ -172,6 +172,12 @@
 	  init: function () {
 	    // Remember planes when we see them.
 	    this.planes = {};
+	    this.anchorsAdded = [];
+	    this.anchorsAddedDetail = {type:'Added', anchors: this.anchorsAdded};
+	    this.anchorsUpdated = [];
+	    this.anchorsUpdatedDetail = {type:'Updated', anchors: this.anchorsUpdated};
+	    this.anchorsRemoved = [];
+	    this.anchorsRemovedDetail = {type:'Removed', anchors: this.anchorsRemoved};
 	  },
 
 	  tick: (function (t, dt) {
@@ -282,6 +288,36 @@
 	      // with planes that match spec,
 	      // from which we can emit appropriate events downstream.
 
+	      // Replace the old list.
+	      this.anchorsAdded = addedThese;
+	      // Emit event if list isn't empty.
+	      if (addedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsAddedDetail.anchors = addedThese;
+	        this.el.emit('anchorsAdded', this.anchorsAddedDetail);
+	      }
+
+	      // Replace the old list.
+	      this.anchorsUpdated = updatedThese;
+	      // Emit event if list isn't empty.
+	      if (updatedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsUpdatedDetail.anchors = updatedThese;
+	        this.el.emit('anchorsUpdated', this.anchorsUpdatedDetail);
+	      }
+
+	      // Replace the old list.
+	      this.anchorsRemoved = removedThese;
+	      // Emit event if list isn't empty.
+	      if (removedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsRemovedDetail.anchors = removedThese;
+	        this.el.emit('anchorsRemoved', this.anchorsRemovedDetail);
+	      }
+	/*
 	      // First, emit remove events as appropriate.
 	      removedThese.forEach(function (plane) {
 	        self.el.emit('removeplane', {id: plane.identifier});
@@ -344,6 +380,7 @@
 	          vertices: plane.vertices || plane.polygon,
 	          scale: tempScale});
 	      });
+	*/
 	    };    
 	  })()
 	});
