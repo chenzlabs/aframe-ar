@@ -442,6 +442,7 @@
 	    var hitpoint = new THREE.Vector3();
 	    var hitquat = new THREE.Quaternion();
 	    var hitscale = new THREE.Vector3();
+	    var worldpos = new THREE.Vector3();
 	          
 	    // The desired function, which this returns.
 	    return function () {
@@ -457,9 +458,10 @@
 	      // At least one hit.  For now, only process the first AR hit.
 	      transform.fromArray(hit[0].modelMatrix);
 	      transform.decompose(hitpoint, hitquat, hitscale);
-	      this.el.object3D.worldToLocal(hitpoint); // FIXME: is this right?
+	      this.el.object3D.getWorldPosition(worldpos);
+	      hitpoint.add(worldpos);
 	      return [{
-	        distance: hitpoint.distanceTo(this.el.object3D.position), // FIXME: is this right?
+	        distance: hitpoint.distanceTo(worldpos), // FIXME: is this right?
 	        point: hitpoint, // Vector3
 	        object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
 	/*
