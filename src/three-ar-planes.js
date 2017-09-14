@@ -55,10 +55,10 @@ AFRAME.registerComponent('three-ar-planes', {
         // Copy plane timestamp, if available.
         if (plane.timestamp) { planespec.timestamp = plane.timestamp; }
 	// Make the position, orientation and extent data conform.
-        if (plane.transform) {
+        if (plane.modelMatrix || plane.transform) {
           // ARKit exposes transform, not position and orientation.
           // We don't have change timestamps, so planespec needs to be JSON stringify/parse cloneable.
-          tempMat4.fromArray(plane.transform);
+          tempMat4.fromArray(plane.modelMatrix || plane.transform);
           tempMat4.decompose(tempPosition, tempQuaternion, tempScale);
           planespec.position = [tempPosition.x, tempPosition.y, tempPosition.z];
           planespec.orientation = [tempQuaternion._x, tempQuaternion._y, tempQuaternion._z, tempQuaternion._w];
