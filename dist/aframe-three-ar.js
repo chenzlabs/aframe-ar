@@ -173,11 +173,11 @@
 	    // Remember planes when we see them.
 	    this.planes = {};
 	    this.anchorsAdded = [];
-	    this.anchorsAddedDetail = {type:'Added', anchors: this.anchorsAdded};
+	    this.anchorsAddedDetail = {type:'added', anchors: this.anchorsAdded};
 	    this.anchorsUpdated = [];
-	    this.anchorsUpdatedDetail = {type:'Updated', anchors: this.anchorsUpdated};
+	    this.anchorsUpdatedDetail = {type:'updated', anchors: this.anchorsUpdated};
 	    this.anchorsRemoved = [];
-	    this.anchorsRemovedDetail = {type:'Removed', anchors: this.anchorsRemoved};
+	    this.anchorsRemovedDetail = {type:'removed', anchors: this.anchorsRemoved};
 	  },
 
 	  tick: (function (t, dt) {
@@ -217,61 +217,105 @@
 
 	        // Force plane conformance to latest spec.
 	        // (Hopefully soon, this will no longer be required.)
-	        var planespec = {};
+	        var planespec;
 	        // Get plane identifier and conform.
-	        planespec.identifier = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
-	        // Copy plane timestamp, if available.
-	        if (plane.timestamp) { planespec.timestamp = plane.timestamp; }
-		// Make the position, orientation and extent data conform.
-	        if (plane.modelMatrix || plane.transform) {
-	          // ARKit exposes transform, not position and orientation.
-	          // We don't have change timestamps, so planespec needs to be JSON stringify/parse cloneable.
-	          tempMat4.fromArray(plane.modelMatrix || plane.transform);
-	          tempMat4.decompose(tempPosition, tempQuaternion, tempScale);
-	          planespec.position = [tempPosition.x, tempPosition.y, tempPosition.z];
-	          planespec.orientation = [tempQuaternion._x, tempQuaternion._y, tempQuaternion._z, tempQuaternion._w];
-	          planespec.extent = plane.extent;
-	        } else {
-	          // Draft ARCore exposes typed arrays, which JSON stringify/parse hates.
-	          // (However, if we can rely on timestamps for update check, we don't need to worry about that.)
-	          if (planespec.timestamp !== undefined) {
-	            planespec.position = plane.position;
-	            planespec.orientation = plane.orientation;
-	            planespec.extent = plane.extent;
-	            if (plane.polygon) { planespec.vertices = plane.polygon; } 
-	            else if (plane.vertices) { planespec.vertices = plane.vertices; }
-	          } else {
-	            // Make planespec stringify/parse clone friendly.
-	            planespec.position = [plane.position['0'], plane.position['1'], plane.position['2']];
-	            planespec.orientation = [plane.orientation['0'], plane.orientation['1'], plane.orientation['2'], plane.orientation['3']];
-	            planespec.extent = [plane.extent['0'], plane.extent['1']];
-	            if (plane.polygon) {
-	              planespec.vertices = [];
-	              plane.polygon.forEach(function (n) { planespec.vertices.push(n); });
-	            } else if (plane.vertices) { planespec.vertices = plane.vertices; }
-	          }
-	        }
+	        var id = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
+	        // Get plane timestamp, if available.
+	        var timestamp = plane.timestamp;
 
 	        // Note that we've seen it.
-		var id = planespec.identifier;
 	        seenThese[id] = true;
-	        // Figure out whether added or updated.
-	        if (this.planes[id]) {
-	          // If we've seen it before, and we have timestamp values, just check those
-	          if (this.planes[id].timestamp) {
-	            if (planespec.timestamp !== this.planes[id].timestamp) {
-	              updatedThese.push(planespec);
+
+	        var adding = !this.planes[id];
+	        var hasTimestamp = timestamp !== undefined;
+	        if (!adding) {
+	            // We've seen this plane before.
+	            // If this plane has a timestamp,
+	            if (hasTimestamp) {
+	                // And the timestamp is identical,
+	                if (timestamp === this.planes[id].timestamp) {
+	                    // Then we don't need to do any more work for this plane,
+	                    // since it hasn't changed.
+	                    continue;
+	                } else {
+	                    // We have a timestamp, and it doesn't match,
+	                    // so we'll be updating the previous plane spec.
+	                }
+	            } else {
+	                // This plane didn't have a timestamp,
+	                // so unfortunately we'll need to do brute force comparison.
+	                // We might update the previous plane spec afterward.
 	            }
+	        } else {
+	            // We haven't seen this plane before, so we'll be adding it.
+	        }
+
+	        // If we're still here, we need to finish building the plane spec.
+
+	        var planespec = {identifier: id};
+	        if (timestamp !== undefined) { planespec.timestamp = timestamp; }
+
+		// New API plane spec uses modelMatrix (same as transform).
+	        if (plane.modelMatrix || plane.transform) {
+	          planespec.modelMatrix = plane.modelMatrix || plane.transform;
+	        } else {
+	          // Create modelMatrix from position and orientation.
+	          tempPosition.fromArray(plane.position);
+	          tempQuaternion.fromArray(plane.orientation);
+	          tempScale.set(1, 1, 1);
+	          tempMat4.compose(tempPosition, tempQuaternion, tempScale);
+	          planespec.modelMatrix = tempMat4.elements.slice();
+	        }
+
+	        planespec.center = plane.center;
+	        planespec.extent = plane.extent;
+	        if (plane.polygon) { planespec.vertices = plane.polygon; } 
+	        else if (plane.vertices) { planespec.vertices = plane.vertices; }
+
+	        // Figure out whether added or updated.
+	        // If we've seen it before,
+	        if (!adding) {
+	          // And it has a timestamp,
+	          if (hasTimestamp) {
+	            // We're updating it (because if not we'd be done already.)
+	            updatedThese.push(planespec);
 		  } else
-	          // If we've seen it before, we should have it cached in this.planes already, to compare against.
-	          if (!AFRAME.utils.deepEqual(planespec, this.planes[id])) {
+	          // If it didn't have a timestamp, do brute force comparison.
+	          // FIXME: better brute-force comparison!
+	          if (AFRAME.utils.deepEqual(planespec, this.planes[id])) {
+	            // It didn't change, so we're done with this one.
+	            continue;
+	          } else {
+	            // It changed, so we're updating it.
+	            // However, since we need to do brute force comparison,
+	            // we'll need to clone it when we remember.
 	            updatedThese.push(planespec);
 	          }
 	        } else {
-	          // Remember by cloning the plane into this.planes.
-	          // If there is a timestamp to check, we don't need to stringify/parse clone for AFRAME.utils.deepEqual.
-	          this.planes[id] = planespec.timestamp !== undefined ? planespec : JSON.parse(JSON.stringify(planespec));
-	          addedThese.push(planespec);
+	          // We haven't see it, so we're adding it.
+	          addedThese.push(planespec)
+	        }
+
+	        // If we're still here, we need to remember the new planespec.
+
+	        // If we have timestamps,
+	        if (hasTimestamp) {
+	          // We only need to compare that,
+	          // so we don't need to copy or clone anything.
+	          // since we always make a new plane spec right now.
+	          this.planes[id] = planespec;
+	        } else {
+	          // Because the objects in the plane may be updated in place,
+	          // we need to clone those parts of the remembered plane spec.
+	          this.planes[id] = {
+	            identifier: planespec.identifier,
+	            modelMatrix: planespec.modelMatrix.slice(),
+	            center: planespec.center.slice(),
+	            extent: planespec.extent.slice()
+	          };
+	          if (planespec.vertices) {
+	            this.planes[id].vertices = planespec.vertices.slice();
+	          }
 	        }
 	      }
 
@@ -295,7 +339,7 @@
 	        // Reuse the same event detail to avoid making garbage.
 	        // TODO: Reuse same CustomEvent?
 	        this.anchorsAddedDetail.anchors = addedThese;
-	        this.el.emit('anchorsAdded', this.anchorsAddedDetail);
+	        this.el.emit('anchorsadded', this.anchorsAddedDetail);
 	      }
 
 	      // Replace the old list.
@@ -305,7 +349,7 @@
 	        // Reuse the same event detail to avoid making garbage.
 	        // TODO: Reuse same CustomEvent?
 	        this.anchorsUpdatedDetail.anchors = updatedThese;
-	        this.el.emit('anchorsUpdated', this.anchorsUpdatedDetail);
+	        this.el.emit('anchorsupdated', this.anchorsUpdatedDetail);
 	      }
 
 	      // Replace the old list.
@@ -315,72 +359,8 @@
 	        // Reuse the same event detail to avoid making garbage.
 	        // TODO: Reuse same CustomEvent?
 	        this.anchorsRemovedDetail.anchors = removedThese;
-	        this.el.emit('anchorsRemoved', this.anchorsRemovedDetail);
+	        this.el.emit('anchorsremoved', this.anchorsRemovedDetail);
 	      }
-	/*
-	      // First, emit remove events as appropriate.
-	      removedThese.forEach(function (plane) {
-	        self.el.emit('removeplane', {id: plane.identifier});
-	      });
-
-	      // Next, emit updated events as appropriate.
-	      updatedThese.forEach(function (plane) {
-		// Per spec, we get:
-	        // identifier (as string),
-	        // position (as number[3]),
-	        // orientation (as number[4]),
-	        // extent (as number[2]),
-	        // and possible vertices (as number[3*n]
-
-	        // For now, convert to legacy format.
-	        tempPosition.fromArray(plane.position);
-	        tempQuaternion.fromArray(plane.orientation);
-	        tempEuler.setFromQuaternion(tempQuaternion);
-	        tempRotation.set(
-	          tempEuler.x * THREE.Math.RAD2DEG,
-	          tempEuler.y * THREE.Math.RAD2DEG,
-	          tempEuler.z * THREE.Math.RAD2DEG);
-	        tempExtent3.set(plane.extent[0], 0, plane.extent[1]);
-
-	        self.el.emit('updateplane', {
-	          id: plane.identifier,
-	          alignment: tempAlignment,
-	          position: tempPosition,
-	          rotation: tempRotation,
-	          extent: tempExtent3,
-	          vertices: plane.vertices,
-	          scale: tempScale});
-	      });
-
-	      // Last, emit added/created events as appropriate.
-	      addedThese.forEach(function (plane) {
-		// Per spec, we get:
-	        // identifier (as string),
-	        // position (as number[3]),
-	        // orientation (as number[4]),
-	        // extent (as number[2]),
-	        // and possible vertices (as number[3*n]
-
-	        // For now, convert to legacy format.
-	        tempPosition.fromArray(plane.position);
-	        tempQuaternion.fromArray(plane.orientation);
-	        tempEuler.setFromQuaternion(tempQuaternion);
-	        tempRotation.set(
-	          tempEuler.x * THREE.Math.RAD2DEG,
-	          tempEuler.y * THREE.Math.RAD2DEG,
-	          tempEuler.z * THREE.Math.RAD2DEG);
-	        tempExtent3.set(plane.extent[0], 0, plane.extent[1]);
-
-	        self.el.emit('createplane', {
-	          id: plane.identifier,
-	          alignment: tempAlignment,
-	          position: tempPosition,
-	          rotation: tempRotation,
-	          extent: tempExtent3,
-	          vertices: plane.vertices || plane.polygon,
-	          scale: tempScale});
-	      });
-	*/
 	    };    
 	  })()
 	});
