@@ -4,6 +4,12 @@ AFRAME.registerComponent('three-ar', {
     },
 
     init: function () {
+        this.posePosition = new THREE.Vector3();
+        this.poseQuaternion = new THREE.Quaternion();
+        this.poseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+        this.poseRotation = new THREE.Vector3();
+        this.projectionMatrix = new THREE.Matrix4();
+
         this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
         if (this.el.sceneEl.hasLoaded) {
             console.log('three-ar: hasLoaded, setTimeout');
@@ -20,40 +26,36 @@ AFRAME.registerComponent('three-ar', {
         // If we have an ARView, render it.
         if (this.arView) { this.arView.render(); }
 
+        // Get the ARDisplay frame data with pose and projection matrix.
+        if (!this.frameData) { this.frameData = new VRFrameData(); }
+        this.arDisplay.getFrameData(this.frameData);
+
+        // Get the pose information.
+        this.posePosition.fromArray(this.frameData.pose.position);
+        this.poseQuaternion.fromArray(this.frameData.pose.orientation);
+        this.poseEuler.setFromQuaternion(this.poseQuaternion);
+        this.poseRotation.set(
+            THREE.Math.RAD2DEG * this.poseEuler.x,
+            THREE.Math.RAD2DEG * this.poseEuler.y,
+            THREE.Math.RAD2DEG * this.poseEuler.z);
+        // Can use either left or right projection matrix; pick left for now.
+        this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
+
         // If we've taken over a camera, update it.  If not, we're done.
         if (!this.arCamera) { return; }
 
         var camera = this.arCamera;
 
-        // Get the ARDisplay frame data with pose and projection matrix.
-        if (!this.frameData) {
-            this.frameData = new VRFrameData();
-        }
-        this.arDisplay.getFrameData(this.frameData);
+        // Apply the pose position via setAttribute,
+        // so that other A-Frame components can see the values.
+        camera.el.setAttribute('position', this.posePosition);
 
-        // Apply the pose position so that other A-Frame components can see the values.
-        var position = this.frameData.pose.position;
-        camera.el.setAttribute('position', { x: position['0'], y: position['1'], z: position['2'] });
-
-        // Apply the pose rotation so that other A-Frame components can see the values.
-        if (!this.poseEuler) {
-            this.poseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
-        }
-        if (!this.poseQuaternion) {
-            this.poseQuaternion = new THREE.Quaternion();
-        }
-        var orientation = this.frameData.pose.orientation;
-        this.poseQuaternion.set(orientation["0"], orientation["1"], orientation["2"], orientation["3"]);
-        this.poseEuler.setFromQuaternion(this.poseQuaternion);
-        camera.el.setAttribute('rotation', {
-            x: THREE.Math.RAD2DEG * this.poseEuler.x,
-            y: THREE.Math.RAD2DEG * this.poseEuler.y,
-            z: THREE.Math.RAD2DEG * this.poseEuler.z
-        });
+        // Apply the pose rotation via setAttribute,
+        // so that other A-Frame components can see the values.
+        camera.el.setAttribute('rotation', this.poseRotation);
 
         // Apply the projection matrix.
-        // Can use either left or right projection matrix; pick left for now.
-        camera.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
+        camera.projectionMatrix = this.projectionMatrix;
     },
 
     takeOverCamera: function (camera) {
@@ -90,16 +92,23 @@ AFRAME.registerComponent('three-ar', {
         });
     },
 
+    getPosition: function () {
+        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+        return this.posePosition;
+    },
+
+    getOrientation: function () {
+        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+        return this.poseQuaternion;
+    },
+
+    getRotation: function () {
+        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+        return this.poseRotation;
+    },
+
     getProjectionMatrix: function () {
         if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
-
-        // Get the ARDisplay frame data with pose and projection matrix.
-        if (!this.frameData) {
-            this.frameData = new VRFrameData();
-        }
-        this.arDisplay.getFrameData(this.frameData);
-
-        // Can use either left or right projection matrix; pick left for now.
-        return this.frameData.leftProjectionMatrix;
+        return this.projectionMatrix;
     }
 });
