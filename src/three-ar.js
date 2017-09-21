@@ -1,15 +1,50 @@
 AFRAME.registerComponent('three-ar', {
     schema: {
-        takeOverCamera: { default: true }
+        takeOverCamera: { default: true },
+        enabled: { default: true }
     },
 
     init: function () {
-        if (this.el.sceneEl.hasLoaded) { this.onceSceneLoaded(); }
-        else { this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded.bind(this)); }
+        this.previousValues = {}
+    },
+
+    update: function (oldData) {
+        if(typeof(oldData.enabled) !== 'undefined' && this.data.enabled !== oldData.enabled) {
+            if(this.data.enabled) {
+                this.enable();
+            } else {
+                this.disable();
+            }
+        }
+    },
+
+    play: function () {
+        if(this.data.enabled) {
+            this.enable()
+        }
+    },
+
+    enable: function () {
+        if (this.el.sceneEl.hasLoaded) { this.enableARView(); }
+        else { this.el.sceneEl.addEventListener('loaded', this.enableARView.bind(this)); }
+    },
+
+    pause: function () {
+        this.disable()
+    },
+
+    disable: function () {
+        this.restorePreviousView()
+        this.previousValues = {}
+        delete this.arDisplay;
+    },
+
+    remove: function () {
+        this.pause()
     },
 
     tick: function (t, dt) {
-        if (!this.arDisplay || !this.arDisplay.getFrameData) { return; }
+        if (!this.isPlaying || !this.arDisplay || !this.arDisplay.getFrameData) { return; }
 
         // If we have an ARView, render it.
         if (this.arView) { this.arView.render(); }
@@ -51,14 +86,21 @@ AFRAME.registerComponent('three-ar', {
     },
 
     takeOverCamera: function (camera) {
+        // Save previous values to be restored when component is disabled or removed
+        this.previousValues.lookControlsEnabled = AFRAME.utils.entity.getComponentProperty(camera.el, 'look-controls.enabled');
+        this.previousValues.cameraIsARPerspectiveCamera = camera.isARPerspectiveCamera;
+        this.previousValues.cameraVrDisplay = camera.vrDisplay;
+
+        // Take over camera
         this.arCamera = camera;
         camera.isARPerspectiveCamera = true; // HACK - is this necessary?
         camera.vrDisplay = this.arDisplay; // HACK - is this necessary?
+
         // ARKit/Core will give us rotation, don't compound it with look-controls.
-        camera.el.setAttribute('look-controls', { enabled: false });
+        AFRAME.utils.entity.setComponentProperty(camera.el, 'look-controls.enabled', false)
     },
 
-    onceSceneLoaded: function () {
+    enableARView: function () {
         // Get the ARDisplay, if any.
         var self = this;
         THREE.ARUtils.getARDisplay().then(function (display) {
@@ -74,6 +116,11 @@ AFRAME.registerComponent('three-ar', {
               setTimeout(function () { self.takeOverCamera(scene.camera); });
             }
 
+            // Save previous values to be restored when component is disabled or removed
+            self.previousValues.sceneRendererAlpha = scene.renderer.alpha;
+            self.previousValues.sceneRendererAutoClearColor = scene.renderer.autoClearColor;
+            self.previousValues.sceneRendererAutoClearDepth = scene.renderer.autoClearDepth;
+
             // Modify the scene renderer to allow ARView video passthrough.
             scene.renderer.alpha = true;
             scene.renderer.autoClearColor = THREE.ARUtils.isARKit(display);
@@ -82,6 +129,23 @@ AFRAME.registerComponent('three-ar', {
             // Create the ARView.
             self.arView = new THREE.ARView(display, scene.renderer);
         });
+    },
+
+    restorePreviousView: function () {
+        var scene = this.el.sceneEl;
+        scene.renderer.alpha = this.previousValues.sceneRendererAlpha;
+        scene.renderer.autoClearColor = this.previousValues.sceneRendererAutoClearColor;
+        scene.renderer.autoClearDepth = this.previousValues.sceneRendererAutoClearDepth;
+
+        var camera = scene.camera;
+        camera.isARPerspectiveCamera = this.previousValues.cameraIsARPerspectiveCamera;
+        camera.vrDisplay = this.previousValues.cameraVrDisplay;
+
+        AFRAME.utils.entity.setComponentProperty(
+            camera.el,
+            'look-controls.enabled',
+            this.previousValues.lookControlsEnabled
+        );
     },
 
     getProjectionMatrix: function () {
