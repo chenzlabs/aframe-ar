@@ -422,9 +422,9 @@
 	  },
 	        
 	  intersectObjects: function (objects, recursive) {
+	    var results = this.raycasterIntersectObjects(objects, recursive);
 	    // Tack on AR hit result, if any.
-	    return this.raycasterIntersectObjects(objects, recursive)
-	      .concat(this.hitAR());
+	    return results.concat(this.hitAR());
 	  },        
 	        
 	  hitAR: (function () {          
@@ -450,9 +450,8 @@
 	      transform.fromArray(hit[0].modelMatrix);
 	      transform.decompose(hitpoint, hitquat, hitscale);
 	      this.el.object3D.getWorldPosition(worldpos);
-	      hitpoint.add(worldpos);
 	      return [{
-	        distance: hitpoint.distanceTo(worldpos), // FIXME: is this right?
+	        distance: hitpoint.distanceTo(worldpos),
 	        point: hitpoint, // Vector3
 	        object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
 	/*
