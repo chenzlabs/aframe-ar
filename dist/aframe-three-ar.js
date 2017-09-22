@@ -276,8 +276,8 @@
 	          planespec.modelMatrix = tempMat4.elements.slice();
 	        }
 
-	        planespec.center = plane.center;
 	        planespec.extent = plane.extent;
+	        if (plane.center) { planespec.center = plane.center; }
 	        if (plane.polygon) { planespec.vertices = plane.polygon; } 
 	        else if (plane.vertices) { planespec.vertices = plane.vertices; }
 
@@ -319,9 +319,11 @@
 	          this.planes[id] = {
 	            identifier: planespec.identifier,
 	            modelMatrix: planespec.modelMatrix.slice(),
-	            center: planespec.center.slice(),
 	            extent: planespec.extent.slice()
 	          };
+	          if (planespec.center) {
+	            this.planes[id].center = planespec.center.slice();
+	          }
 	          if (planespec.vertices) {
 	            this.planes[id].vertices = planespec.vertices.slice();
 	          }
