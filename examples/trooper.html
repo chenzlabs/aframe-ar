@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <!-- Include my latest A-Frame master. -->
+    <script src="//rawgit.com/chenzlabs/aframe/master/dist/aframe-master.js"></script>
+    <!-- Include three.ar.js library. -->
+    <script src="//rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+    <!-- Include my A-Frame three.ar.js scene component. -->
+    <script src="//rawgit.com/chenzlabs/aframe-ar/experimental-planes/dist/aframe-ar.js"></script>
+    
+    <script src="https://threejs.org/examples/js/loaders/ColladaLoader2.js"></script>
+    <script>
+      // Dancing stormtrooper from three.js example.
+      // https://threejs.org/examples/webgl_loader_collada_skinning.html
+      // Dancing Stormtrooper StrykerDoesAnimation is licensed under CC Attribution
+      AFRAME.registerComponent('thing', {
+        init: function () {
+          var self = this;
+          var obj3d = this.el.object3D;
+          this.loader = new THREE.ColladaLoader();
+          this.loader.load( 'https://threejs.org/examples/models/collada/stormtrooper/stormtrooper.dae', function ( collada ) {
+            self.avatar = collada.scene;
+            self.avatar.scale.x = 0.125;
+            self.avatar.scale.y = 0.125;
+            self.avatar.scale.z = 0.125;
+            self.avatar.rotation.z = Math.PI;
+                      obj3d.add( self.avatar );
+            self.mixer = new THREE.AnimationMixer( self.avatar );
+            var animations = collada.animations;
+            var action = self.mixer.clipAction( animations[ 0 ] ).play();
+                  });
+          
+          showHUD('Dancing Stormtrooper StrykerDoesAnimation is licensed under CC Attribution');
+        },
+        
+        tick: function (t, dt) {
+          if (this.mixer) { this.mixer.update(dt / 1000.0); }
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <!-- Use ar with the scene, and don't show the usual VR icon. -->
+    <a-scene ar>
+      <!-- Wrap in a reality -->
+      <a-entity id="reality">
+        <!-- Wrap in a locality -->
+        <a-entity id="locality">
+          <a-camera>
+            <!-- Head-locked text used for heads-up display to the user. -->
+            <a-text id="hud" width="0.8" height="0.8" align="center"
+                    value="Looking for planes..."
+                    color="red" position="0 -0.6 -2"></a-text>
+          </a-camera>
+        </a-entity>
+      </a-entity>
+    </a-scene>
+    
+    <script>
+      var scene = document.querySelector('a-scene');
+      var reality = scene.querySelector('#reality');
+      
+      function showHUD(msg, color) {
+        var properties = {value: msg};
+        if (color) { properties.color = color; }
+        scene.querySelector('#hud').setAttribute('text', properties);
+      }
+
+      function elementIdForPlane(id) { return 'plane-' + id; }
+      function elementForPlane(id) { return reality.querySelector('#' + elementIdForPlane(id)); }
+      function getAllPlanes() { return reality.querySelectorAll('a-plane.plane'); }
+      function removePlaneElement(pe) {
+        if (pe && pe.parentElement) { pe.parentElement.removeChild(pe); }
+        return pe;
+      }
+      function removePlaneForId(id) {
+        var pe = elementForPlane(id);
+        if (pe && pe.parentElement) { removePlaneElement(pe); }
+        return pe;
+      }
+      function makePlaneForId(id) {
+        var pe = document.createElement('a-plane');
+        pe.setAttribute('id', elementIdForPlane(id));
+        pe.setAttribute('class', 'plane');
+        pe.setAttribute('material', {color:'red', opacity:0.3});
+        reality.appendChild(pe);
+        
+        // Compensate for plane rotation and stand up a dancing stormtrooper.
+        // https://threejs.org/examples/webgl_loader_collada_skinning.html
+        pe.insertAdjacentHTML('beforeend',
+          '<a-entity rotation="90 0 0" thing></a-entity>');
+        return pe;
+      }
+    
+      function createPlane(evt) {
+        // id, alignment, extent, position, rotation, scale
+        var planeId = evt.detail.id;
+        
+        // Make plane if it doesn't already exist.
+        var pe = elementForPlane(planeId);
+        showHUD('createPlane ' + planeId + (!pe ? '' : (' ??? ' + pe)));
+        if (!pe) { pe = makePlaneForId(planeId); }
+        
+        // Update plane with provided aspects.
+        return updatePlane(evt);
+      }
+    
+      function updatePlane(evt) {
+        // id, alignment, extent, position, rotation, scale
+        var planeId = evt.detail.id;
+        var alignment = evt.detail.alignment;
+        var extent = evt.detail.extent;
+        var position = evt.detail.position;
+        var rotation = evt.detail.rotation;
+        var scale = evt.detail.scale;
+
+        // Get plane for this id.
+        var pe = elementForPlane(planeId);
+        showHUD('updatePlane ' + planeId + (!pe ? ' ???' : (' ' + pe)));
+        if (pe) {
+          // Make the plane have the provided aspects.
+          pe.setAttribute('position', position);
+          pe.setAttribute('scale', scale);
+          pe.setAttribute('width', extent.x);
+          pe.setAttribute('height', extent.z);
+          // Apply rotation to make plane horizontal.
+          // NOTE: We'll need to counter that when attaching other entities.
+          // FIXME: Use box instead to avoid the need to do anti-rotation.
+          pe.setAttribute('rotation', {x:-90 + rotation.x, y:rotation.y, z:rotation.z});
+
+          // For example purposes, show text representing this plane.
+          var txt =
+            planeId
+            + '\nalignment:' + alignment
+            + '\nextent.x:' + extent.x + '\nextent.y:' + extent.y + '\nextent.z:' + extent.z
+            + '\n\nposition.x:' + position.x + '\nposition.y:' + position.y + '\nposition.z:' + position.z
+            + '\nrotation.x:' + rotation.x + '\nrotation.y:' + rotation.y + '\nrotation.z:' + rotation.z
+            + '\nscale.x:' + scale.x + '\nscale.y:' + scale.y + '\nscale.z:' + scale.z
+          ;
+          pe.setAttribute('text', {zOffset:0.01, value: txt, wrapCount: 100});
+          showHUD(txt);
+        }
+        return pe;
+      }
+
+      function removePlane(evt) {
+        // id
+        var planeId = evt.detail.id;
+        showHUD('removePlane ' + planeId);
+        // Remove plane for this id.
+        return removePlaneForId(planeId);
+      }
+    
+      function addSceneEventListeners() {
+        scene.addEventListener('createplane', createPlane);
+        scene.addEventListener('removeplane', removePlane);
+        scene.addEventListener('updateplane', updatePlane);
+      }
+
+      function onSceneLoaded() {
+        addSceneEventListeners();
+      }
+    
+      if (scene.hasLoaded) {
+        onSceneLoaded();
+      } else {
+        scene.addEventListener('loaded', onSceneLoaded);
+      }
+    </script>
+  </body>
+</html>
+

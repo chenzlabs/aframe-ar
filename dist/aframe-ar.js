@@ -47,6 +47,7 @@
 	__webpack_require__(1);
 	__webpack_require__(2);
 	__webpack_require__(3);
+	__webpack_require__(4);
 
 
 
@@ -60,8 +61,20 @@
 	    },
 
 	    init: function () {
-	        if (this.el.sceneEl.hasLoaded) { this.onceSceneLoaded(); }
-	        else { this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded.bind(this)); }
+	        this.posePosition = new THREE.Vector3();
+	        this.poseQuaternion = new THREE.Quaternion();
+	        this.poseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+	        this.poseRotation = new THREE.Vector3();
+	        this.projectionMatrix = new THREE.Matrix4();
+
+	        this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
+	        if (this.el.sceneEl.hasLoaded) {
+	            console.log('three-ar: hasLoaded, setTimeout');
+	            setTimeout(this.onceSceneLoaded);
+	        } else {
+	            console.log('three-ar: !hasLoaded, addEventListener');
+	            this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
+	        }
 	    },
 
 	    tick: function (t, dt) {
@@ -70,40 +83,36 @@
 	        // If we have an ARView, render it.
 	        if (this.arView) { this.arView.render(); }
 
+	        // Get the ARDisplay frame data with pose and projection matrix.
+	        if (!this.frameData) { this.frameData = new VRFrameData(); }
+	        this.arDisplay.getFrameData(this.frameData);
+
+	        // Get the pose information.
+	        this.posePosition.fromArray(this.frameData.pose.position);
+	        this.poseQuaternion.fromArray(this.frameData.pose.orientation);
+	        this.poseEuler.setFromQuaternion(this.poseQuaternion);
+	        this.poseRotation.set(
+	            THREE.Math.RAD2DEG * this.poseEuler.x,
+	            THREE.Math.RAD2DEG * this.poseEuler.y,
+	            THREE.Math.RAD2DEG * this.poseEuler.z);
+	        // Can use either left or right projection matrix; pick left for now.
+	        this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
+
 	        // If we've taken over a camera, update it.  If not, we're done.
 	        if (!this.arCamera) { return; }
 
 	        var camera = this.arCamera;
 
-	        // Get the ARDisplay frame data with pose and projection matrix.
-	        if (!this.frameData) {
-	            this.frameData = new VRFrameData();
-	        }
-	        this.arDisplay.getFrameData(this.frameData);
+	        // Apply the pose position via setAttribute,
+	        // so that other A-Frame components can see the values.
+	        camera.el.setAttribute('position', this.posePosition);
 
-	        // Apply the pose position so that other A-Frame components can see the values.
-	        var position = this.frameData.pose.position;
-	        camera.el.setAttribute('position', { x: position['0'], y: position['1'], z: position['2'] });
-
-	        // Apply the pose rotation so that other A-Frame components can see the values.
-	        if (!this.poseEuler) {
-	            this.poseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
-	        }
-	        if (!this.poseQuaternion) {
-	            this.poseQuaternion = new THREE.Quaternion();
-	        }
-	        var orientation = this.frameData.pose.orientation;
-	        this.poseQuaternion.set(orientation["0"], orientation["1"], orientation["2"], orientation["3"]);
-	        this.poseEuler.setFromQuaternion(this.poseQuaternion);
-	        camera.el.setAttribute('rotation', {
-	            x: THREE.Math.RAD2DEG * this.poseEuler.x,
-	            y: THREE.Math.RAD2DEG * this.poseEuler.y,
-	            z: THREE.Math.RAD2DEG * this.poseEuler.z
-	        });
+	        // Apply the pose rotation via setAttribute,
+	        // so that other A-Frame components can see the values.
+	        camera.el.setAttribute('rotation', this.poseRotation);
 
 	        // Apply the projection matrix.
-	        // Can use either left or right projection matrix; pick left for now.
-	        camera.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
+	        camera.projectionMatrix = this.projectionMatrix;
 	    },
 
 	    takeOverCamera: function (camera) {
@@ -140,17 +149,24 @@
 	        });
 	    },
 
+	    getPosition: function () {
+	        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+	        return this.posePosition;
+	    },
+
+	    getOrientation: function () {
+	        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+	        return this.poseQuaternion;
+	    },
+
+	    getRotation: function () {
+	        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
+	        return this.poseRotation;
+	    },
+
 	    getProjectionMatrix: function () {
 	        if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
-
-	        // Get the ARDisplay frame data with pose and projection matrix.
-	        if (!this.frameData) {
-	            this.frameData = new VRFrameData();
-	        }
-	        this.arDisplay.getFrameData(this.frameData);
-
-	        // Can use either left or right projection matrix; pick left for now.
-	        return this.frameData.leftProjectionMatrix;
+	        return this.projectionMatrix;
 	    }
 	});
 
@@ -159,8 +175,214 @@
 /* 2 */
 /***/ (function(module, exports) {
 
-	AFRAME.registerComponent('ar', {
+	AFRAME.registerComponent('three-ar-planes', {
 	  dependencies: ['three-ar'],
+
+	  init: function () {
+	    // Remember planes when we see them.
+	    this.planes = {};
+	    this.anchorsAdded = [];
+	    this.anchorsAddedDetail = {type:'added', anchors: this.anchorsAdded};
+	    this.anchorsUpdated = [];
+	    this.anchorsUpdatedDetail = {type:'updated', anchors: this.anchorsUpdated};
+	    this.anchorsRemoved = [];
+	    this.anchorsRemovedDetail = {type:'removed', anchors: this.anchorsRemoved};
+	  },
+
+	  tick: (function (t, dt) {
+	    // Create the temporary variables we will reuse, if needed.
+	    var tempAlignment = 0;
+	    var tempScale = new THREE.Vector3(1, 1, 1);
+	    var tempExtent3 = new THREE.Vector3();
+	    var tempMat4 = new THREE.Matrix4();
+	    var tempPosition = new THREE.Vector3();
+	    var tempRotation = new THREE.Vector3();
+	    var tempQuaternion = new THREE.Quaternion();
+	    var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+	    // The actual function, which we return.
+	    return function (t, dt) {
+	      // Check to see if the anchor list is available.
+	      var threear = this.el.components['three-ar'];
+	      if (!threear || !threear.arDisplay) { return; }
+	      var arDisplay = threear.arDisplay;
+
+	      // Get the list of planes.
+	      var planes = arDisplay.getPlanes ? arDisplay.getPlanes() : arDisplay.anchors_;
+
+	      // Ideally we would have either events, or separate lists for added / updated / removed.
+	      var addedThese = [];
+	      var updatedThese = [];
+	      var removedThese = [];
+
+	      // Because we don't have an indication of added / updated / removed,
+	      // try to keep track ourselves.
+	      var seenThese = {};
+	      var i;
+
+	      // Iterate over the available planes.
+	      for (i=0; planes && i<planes.length; i++) {
+	        var plane = planes[i];
+
+	        // Force plane conformance to latest spec.
+	        // (Hopefully soon, this will no longer be required.)
+	        var planespec;
+	        // Get plane identifier and conform.
+	        var id = (plane.identifier !== undefined ? plane.identifier : plane.id).toString();
+	        // Get plane timestamp, if available.
+	        var timestamp = plane.timestamp;
+
+	        // Note that we've seen it.
+	        seenThese[id] = true;
+
+	        var adding = !this.planes[id];
+	        var hasTimestamp = timestamp !== undefined;
+	        if (!adding) {
+	            // We've seen this plane before.
+	            // If this plane has a timestamp,
+	            if (hasTimestamp) {
+	                // And the timestamp is identical,
+	                if (timestamp === this.planes[id].timestamp) {
+	                    // Then we don't need to do any more work for this plane,
+	                    // since it hasn't changed.
+	                    continue;
+	                } else {
+	                    // We have a timestamp, and it doesn't match,
+	                    // so we'll be updating the previous plane spec.
+	                }
+	            } else {
+	                // This plane didn't have a timestamp,
+	                // so unfortunately we'll need to do brute force comparison.
+	                // We might update the previous plane spec afterward.
+	            }
+	        } else {
+	            // We haven't seen this plane before, so we'll be adding it.
+	        }
+
+	        // If we're still here, we need to finish building the plane spec.
+
+	        var planespec = {identifier: id};
+	        if (timestamp !== undefined) { planespec.timestamp = timestamp; }
+
+		// New API plane spec uses modelMatrix (same as transform).
+	        if (plane.modelMatrix || plane.transform) {
+	          planespec.modelMatrix = plane.modelMatrix || plane.transform;
+	        } else {
+	          // Create modelMatrix from position and orientation.
+	          tempPosition.fromArray(plane.position);
+	          tempQuaternion.fromArray(plane.orientation);
+	          tempScale.set(1, 1, 1);
+	          tempMat4.compose(tempPosition, tempQuaternion, tempScale);
+	          planespec.modelMatrix = tempMat4.elements.slice();
+	        }
+
+	        planespec.extent = plane.extent;
+	        if (plane.center) { planespec.center = plane.center; }
+	        if (plane.polygon) { planespec.vertices = plane.polygon; } 
+	        else if (plane.vertices) { planespec.vertices = plane.vertices; }
+
+	        // Figure out whether added or updated.
+	        // If we've seen it before,
+	        if (!adding) {
+	          // And it has a timestamp,
+	          if (hasTimestamp) {
+	            // We're updating it (because if not we'd be done already.)
+	            updatedThese.push(planespec);
+		  } else
+	          // If it didn't have a timestamp, do brute force comparison.
+	          // FIXME: better brute-force comparison!
+	          if (AFRAME.utils.deepEqual(planespec, this.planes[id])) {
+	            // It didn't change, so we're done with this one.
+	            continue;
+	          } else {
+	            // It changed, so we're updating it.
+	            // However, since we need to do brute force comparison,
+	            // we'll need to clone it when we remember.
+	            updatedThese.push(planespec);
+	          }
+	        } else {
+	          // We haven't see it, so we're adding it.
+	          addedThese.push(planespec)
+	        }
+
+	        // If we're still here, we need to remember the new planespec.
+
+	        // If we have timestamps,
+	        if (hasTimestamp) {
+	          // We only need to compare that,
+	          // so we don't need to copy or clone anything.
+	          // since we always make a new plane spec right now.
+	          this.planes[id] = planespec;
+	        } else {
+	          // Because the objects in the plane may be updated in place,
+	          // we need to clone those parts of the remembered plane spec.
+	          this.planes[id] = {
+	            identifier: planespec.identifier,
+	            modelMatrix: planespec.modelMatrix.slice(),
+	            extent: planespec.extent.slice()
+	          };
+	          if (planespec.center) {
+	            this.planes[id].center = planespec.center.slice();
+	          }
+	          if (planespec.vertices) {
+	            this.planes[id].vertices = planespec.vertices.slice();
+	          }
+	        }
+	      }
+
+	      // To find ones we've removed, we need to scan this.planes.
+	      var self = this;
+	      Object.keys(self.planes).forEach(function (key) {
+	        if (!seenThese[key]) {
+	          removedThese.push(self.planes[key]);
+	          delete self.planes[key];
+	        }
+	      });
+
+	      // OK, now we should have separate added / updated / removed lists,
+	      // with planes that match spec,
+	      // from which we can emit appropriate events downstream.
+
+	      // Replace the old list.
+	      this.anchorsAdded = addedThese;
+	      // Emit event if list isn't empty.
+	      if (addedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsAddedDetail.anchors = addedThese;
+	        this.el.emit('anchorsadded', this.anchorsAddedDetail);
+	      }
+
+	      // Replace the old list.
+	      this.anchorsUpdated = updatedThese;
+	      // Emit event if list isn't empty.
+	      if (updatedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsUpdatedDetail.anchors = updatedThese;
+	        this.el.emit('anchorsupdated', this.anchorsUpdatedDetail);
+	      }
+
+	      // Replace the old list.
+	      this.anchorsRemoved = removedThese;
+	      // Emit event if list isn't empty.
+	      if (removedThese.length > 0) {
+	        // Reuse the same event detail to avoid making garbage.
+	        // TODO: Reuse same CustomEvent?
+	        this.anchorsRemovedDetail.anchors = removedThese;
+	        this.el.emit('anchorsremoved', this.anchorsRemovedDetail);
+	      }
+	    };    
+	  })()
+	});
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+	AFRAME.registerComponent('ar', {
+	  dependencies: ['three-ar-planes'],
 	  init: function () {
 	    this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});
 	  }
@@ -168,7 +390,7 @@
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports) {
 
 	// ar-raycaster modifies raycaster to append AR hit, if any.
@@ -200,9 +422,9 @@
 	  },
 	        
 	  intersectObjects: function (objects, recursive) {
+	    var results = this.raycasterIntersectObjects(objects, recursive);
 	    // Tack on AR hit result, if any.
-	    return this.raycasterIntersectObjects(objects, recursive)
-	      .concat(this.hitAR());
+	    return results.concat(this.hitAR());
 	  },        
 	        
 	  hitAR: (function () {          
@@ -211,6 +433,7 @@
 	    var hitpoint = new THREE.Vector3();
 	    var hitquat = new THREE.Quaternion();
 	    var hitscale = new THREE.Vector3();
+	    var worldpos = new THREE.Vector3();
 	          
 	    // The desired function, which this returns.
 	    return function () {
@@ -226,8 +449,9 @@
 	      // At least one hit.  For now, only process the first AR hit.
 	      transform.fromArray(hit[0].modelMatrix);
 	      transform.decompose(hitpoint, hitquat, hitscale);
+	      this.el.object3D.getWorldPosition(worldpos);
 	      return [{
-	        distance: hitpoint.distanceTo(this.el.object3D.position), // Is that right point?
+	        distance: hitpoint.distanceTo(worldpos),
 	        point: hitpoint, // Vector3
 	        object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
 	/*

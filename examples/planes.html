@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Hello, World! • A-Frame three.ar.js</title>
+    <meta name="description" content="Hello, World! • A-Frame three.ar.js">
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/experimental-planes/dist/aframe-ar.js"></script>
+  </head>
+  <body>
+    <script>
+      AFRAME.registerComponent('thing', {
+        init: function () {
+          this.el.setAttribute('geometry', {primitive:'box', width:0.01, depth:0.01, height:1});
+          this.el.setAttribute('position', {y:0.5});
+        }
+      });
+    </script>
+    
+    <a-scene ar>
+      <a-sphere id="ball" radius="0.01" position="0 0.005 -0.5"></a-sphere>
+      
+      <a-camera>
+        <a-text id="hud"
+                scale="0.01 0.01 0.01" position="0 -0.025 -0.1"
+                color="red" align="center"
+                value="Hi there"></a-text>
+      </a-camera>
+    </a-scene>
+    
+    <script>
+      var sc = document.querySelector('a-scene');
+      function showHUD(msg) { sc.querySelector('#hud').setAttribute('value', msg); }
+      
+      function onCreateOrUpdatePlane(evt) {
+        var plane = sc.querySelector('#plane_' + evt.detail.id);
+        if (!plane) {
+          plane = document.createElement('a-box');
+          plane.setAttribute('id', 'plane_' + evt.detail.id);
+          plane.setAttribute('color', 'red');
+          plane.setAttribute('opacity', 0.2);
+          plane.setAttribute('height', 0.001);
+          sc.appendChild(plane);
+          
+          plane.insertAdjacentHTML('beforeend', '<a-entity thing></a-entity>');
+        }
+        plane.setAttribute('width', evt.detail.extent.x);
+        plane.setAttribute('depth', evt.detail.extent.z);
+        plane.setAttribute('position', evt.detail.position);
+        plane.setAttribute('rotation', evt.detail.rotation);
+        plane.setAttribute('scale', evt.detail.scale);
+        return plane;
+      }
+    
+      function onRemovePlane(evt) {
+        var plane = sc.querySelector('#plane_' + evt.detail.id);
+        if (plane && plane.parentElement) { plane.parentElement.removeChild(plane); }
+      }
+    
+      function addEventListeners() {
+        sc.addEventListener('createplane', onCreateOrUpdatePlane);
+        sc.addEventListener('updateplane', onCreateOrUpdatePlane);
+        sc.addEventListener('removeplane', onRemovePlane);
+      }
+    
+      function onSceneLoaded() {
+        addEventListeners();
+      }
+    
+      if (sc.hasLoaded) { onSceneLoaded(); }
+      else { sc.addEventListener('loaded', onSceneLoaded); }
+    </script>
+  </body>
+</html>

@@ -27,9 +27,9 @@ AFRAME.registerComponent('ar-raycaster', {
   },
         
   intersectObjects: function (objects, recursive) {
+    var results = this.raycasterIntersectObjects(objects, recursive);
     // Tack on AR hit result, if any.
-    return this.raycasterIntersectObjects(objects, recursive)
-      .concat(this.hitAR());
+    return results.concat(this.hitAR());
   },        
         
   hitAR: (function () {          
@@ -38,6 +38,7 @@ AFRAME.registerComponent('ar-raycaster', {
     var hitpoint = new THREE.Vector3();
     var hitquat = new THREE.Quaternion();
     var hitscale = new THREE.Vector3();
+    var worldpos = new THREE.Vector3();
           
     // The desired function, which this returns.
     return function () {
@@ -53,8 +54,9 @@ AFRAME.registerComponent('ar-raycaster', {
       // At least one hit.  For now, only process the first AR hit.
       transform.fromArray(hit[0].modelMatrix);
       transform.decompose(hitpoint, hitquat, hitscale);
+      this.el.object3D.getWorldPosition(worldpos);
       return [{
-        distance: hitpoint.distanceTo(this.el.object3D.position), // Is that right point?
+        distance: hitpoint.distanceTo(worldpos),
         point: hitpoint, // Vector3
         object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
 /*
