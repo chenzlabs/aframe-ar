@@ -67,10 +67,10 @@ AFRAME.registerComponent('three-ar', {
     },
 
     onceSceneLoaded: function () {
-        // Add an event listener for vrdisplayconnect,
+        // Add an event listener for ardisplayconnect,
         // to check for AR display if we don't have one yet.
         var self = this;
-        window.addEventListener('vrdisplayconnect', function () {
+        window.addEventListener('ardisplayconnect', function () {
             if (!self.arDisplay) { self.checkForARDisplay(); }
         });
 
