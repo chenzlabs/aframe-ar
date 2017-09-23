@@ -124,6 +124,18 @@
 	    },
 
 	    onceSceneLoaded: function () {
+	        // Add an event listener for ardisplayconnect,
+	        // to check for AR display if we don't have one yet.
+	        var self = this;
+	        window.addEventListener('ardisplayconnect', function () {
+	            if (!self.arDisplay) { self.checkForARDisplay(); }
+	        });
+
+	        // Check now for AR display.
+	        this.checkForARDisplay();
+	    },
+
+	    checkForARDisplay: function () {
 	        // Get the ARDisplay, if any.
 	        var self = this;
 	        THREE.ARUtils.getARDisplay().then(function (display) {
