@@ -71,7 +71,9 @@ AFRAME.registerComponent('three-ar', {
         // to check for AR display if we don't have one yet.
         var self = this;
         window.addEventListener('ardisplayconnect', function () {
-            if (!self.arDisplay) { self.checkForARDisplay(); }
+            if (!self.arDisplay) { 
+                setTimeout(self.checkForARDisplay.bind(self));
+            }
         });
 
         // Check now for AR display.
