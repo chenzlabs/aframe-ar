@@ -12,8 +12,6 @@ Basic usage:
 <!-- Last, include aframe-ar. -->
 <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.js"></script>
 
-
-
 <!-- Place the ar component on your scene, and the camera will use AR by default. -->
 <a-scene ar>
   <a-sphere radius="0.01" position="0 0.005 -0.5"></a-sphere>
@@ -21,15 +19,22 @@ Basic usage:
 ```
 
 Examples:
-- https://aframe-ar.glitch.me
-- - (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar?path=public/index.html)
-- `ar-raycaster` usage: https://aframe-ar-raycaster-logo-test.glitch.me/ar.html
-- - (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-raycaster-logo-test?path=ar.html)
-- https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
-- - (as seen at https://twitter.com/machenmusik/status/915692630926938112)
-- - (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-dragonites?path=index.html)
+
+Basic AR camera: https://aframe-ar.glitch.me
+- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar?path=public/index.html)
+
+`ar-raycaster` usage: https://aframe-ar-raycaster-logo-test.glitch.me/ar.html
+- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-raycaster-logo-test?path=ar.html)
+
+Plane detection and visualization: https://aframe-ar-plane.glitch.me
+- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-plane?path=index.html)
+
+https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
+- (as seen at https://twitter.com/machenmusik/status/915692630926938112)
+- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-dragonites?path=index.html)
 
 Reference links:
+
 - https://aframe.io
 - https://github.com/google-ar/three.ar.js
 - https://developers.google.com/ar/develop/web/getting-started
