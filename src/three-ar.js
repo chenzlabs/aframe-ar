@@ -38,6 +38,7 @@ AFRAME.registerComponent('three-ar', {
             THREE.Math.RAD2DEG * this.poseEuler.x,
             THREE.Math.RAD2DEG * this.poseEuler.y,
             THREE.Math.RAD2DEG * this.poseEuler.z);
+
         // Can use either left or right projection matrix; pick left for now.
         this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
 
@@ -54,8 +55,10 @@ AFRAME.registerComponent('three-ar', {
         // so that other A-Frame components can see the values.
         camera.el.setAttribute('rotation', this.poseRotation);
 
-        // Apply the projection matrix.
-        camera.projectionMatrix = this.projectionMatrix;
+        // Apply the projection matrix, if we're not in VR.
+        if (!this.el.sceneEl.is('vr-mode')) {
+          camera.projectionMatrix = this.projectionMatrix;
+        }
     },
 
     takeOverCamera: function (camera) {
