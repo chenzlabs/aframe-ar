@@ -12,10 +12,8 @@ AFRAME.registerComponent('three-ar', {
 
         this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
         if (this.el.sceneEl.hasLoaded) {
-            console.log('three-ar: hasLoaded, setTimeout');
             setTimeout(this.onceSceneLoaded);
         } else {
-            console.log('three-ar: !hasLoaded, addEventListener');
             this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
         }
     },
@@ -38,6 +36,20 @@ AFRAME.registerComponent('three-ar', {
             THREE.Math.RAD2DEG * this.poseEuler.x,
             THREE.Math.RAD2DEG * this.poseEuler.y,
             THREE.Math.RAD2DEG * this.poseEuler.z);
+
+        // For A-Painter, detect bogus pose and fire poseFound / poseLost.
+        var poseValid = this.posePosition.x || this.posePosition.y || this.posePosition.z || this.poseQuaternion.x || this.poseQuaternion.y || this.poseQuaternion.z;
+        if (poseValid) {
+          if (this.poseLost !== false) {
+            this.poseLost = false;
+            this.el.emit('poseFound');
+          }
+        } else {
+          if (this.poseLost !== true) {
+            this.poseLost = true;
+            this.el.emit('poseLost', false);
+          }
+        }
 
         // Can use either left or right projection matrix; pick left for now.
         this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
