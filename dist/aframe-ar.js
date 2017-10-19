@@ -57,7 +57,8 @@
 
 	AFRAME.registerComponent('three-ar', {
 	    schema: {
-	        takeOverCamera: { default: true }
+	        takeOverCamera: {default: true},
+	        cameraUserHeight: {default: false}
 	    },
 
 	    init: function () {
@@ -93,6 +94,11 @@
 	            THREE.Math.RAD2DEG * this.poseEuler.x,
 	            THREE.Math.RAD2DEG * this.poseEuler.y,
 	            THREE.Math.RAD2DEG * this.poseEuler.z);
+
+	        // If we control a camera, and should apply user height, do it.
+	        if (this.arCamera && this.data.cameraUserHeight) {
+	            this.posePosition.y += this.arCamera.el.components.camera.data.userHeight;
+	        }
 
 	        // For A-Painter, detect bogus pose and fire poseFound / poseLost.
 	        var poseValid = this.posePosition.x || this.posePosition.y || this.posePosition.z || this.poseQuaternion.x || this.poseQuaternion.y || this.poseQuaternion.z;
@@ -409,8 +415,17 @@
 /***/ (function(module, exports) {
 
 	AFRAME.registerComponent('ar', {
+	  schema: {
+	    takeOverCamera: {default: true},
+	    cameraUserHeight: {default: false}
+	  },
 	  dependencies: ['three-ar-planes'],
 	  init: function () {
+	    this.el.setAttribute('three-ar', {
+	      takeOverCamera: this.data.takeOverCamera,
+	      cameraUserHeight: this.data.cameraUserHeight
+	    });
+
 	    this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});
 	    // Ensure passthrough is visible, make sure A-Frame styles don't interfere.
 	    document.head.insertAdjacentHTML('beforeend', 
