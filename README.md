@@ -3,6 +3,16 @@ Basic [A-Frame](https://aframe.io) support for browser-based augmented reality (
 using the new [three.ar.js](https://github.com/google-ar/three.ar.js) library 
 and [WebARonARKit / WebARonARCore browsers](https://developers.google.com/ar/develop/web/getting-started).
 
+By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene declaration:
+
+```
+<a-scene ar>
+...
+</a-scene>
+```
+
+[aframe-ar](https://github.com/chenzlabs/aframe-ar) will, when using a supported browser, take over the scene camera using information from ARKit / ARCore.
+
 Basic usage:
 ```
 <!-- First, include whichever version of A-Frame you like. -->
