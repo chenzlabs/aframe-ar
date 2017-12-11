@@ -4,8 +4,8 @@
   "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit / WebARonARCore browsers.",
   "main": "src/index.js",
   "scripts": {
-    "build": "browserify examples/main.js -o examples/build.js",
-    "dev": "budo examples/main.js:build.js --dir examples --port 8000 --live --open",
+    "build": "browserify src/index.js -o examples/build.js",
+    "dev": "budo src/index.js:build.js --dir examples --port 8000 --live --open",
     "dist": "webpack src/index.js dist/aframe-ar.js && webpack -p src/index.js dist/aframe-ar.min.js && webpack src/index.js dist/aframe-three-ar.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",

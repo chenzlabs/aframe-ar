@@ -3,9 +3,14 @@ AFRAME.registerComponent('ar', {
     takeOverCamera: {default: true},
     cameraUserHeight: {default: false}
   },
-  dependencies: ['three-ar-planes'],
+  dependencies: ['three-ar-planes', 'mozilla-xr-ar'],
   init: function () {
     this.el.setAttribute('three-ar', {
+      takeOverCamera: this.data.takeOverCamera,
+      cameraUserHeight: this.data.cameraUserHeight
+    });
+
+    this.el.setAttribute('mozilla-xr-ar', {
       takeOverCamera: this.data.takeOverCamera,
       cameraUserHeight: this.data.cameraUserHeight
     });
