@@ -424,8 +424,6 @@
 	    init: function () {
 	        this.onInit = this.onInit.bind(this);
 	        this.onWatch = this.onWatch.bind(this);
-	        window['arkitCallback' + 0] = this.onInit;
-	        window['arkitCallback' + 1] = this.onWatch;
 
 	        this.poseMatrix = new THREE.Matrix4();
 	        this.posePosition = new THREE.Vector3();
@@ -478,6 +476,9 @@
 	        // Check if the low-level WebXR Viewer interfaces are there.
 	        if (!window.webkit || !window.webkit.messageHandlers) { return; }
 	        if (!window.webkit.messageHandlers.initAR) { return; }
+
+	        window['arkitCallback' + 0] = this.onInit;
+	        window['arkitCallback' + 1] = this.onWatch;
 
 	        // Compose data to use with initAR.
 	        var data = {
@@ -536,6 +537,9 @@
 	        if (self.data.takeOverCamera) {
 	            setTimeout(function () { self.takeOverCamera(scene.camera); });
 	        }
+
+	        // Force resize of scene canvas for WebXR Viewer.
+	        setTimeout(function () { scene.resize(); });
 
 	        // Modify the scene renderer to allow ARView video passthrough.
 	        scene.renderer.setPixelRatio(1);
