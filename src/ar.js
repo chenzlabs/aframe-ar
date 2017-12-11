@@ -1,7 +1,8 @@
 AFRAME.registerComponent('ar', {
   schema: {
     takeOverCamera: {default: true},
-    cameraUserHeight: {default: false}
+    cameraUserHeight: {default: false},
+    hideUI: {default: true}
   },
   dependencies: ['three-ar-planes', 'mozilla-xr-ar'],
   init: function () {
@@ -15,7 +16,10 @@ AFRAME.registerComponent('ar', {
       cameraUserHeight: this.data.cameraUserHeight
     });
 
-    this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});
+    if (this.data.hideUI) {
+      this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});
+    }
+
     // Ensure passthrough is visible, make sure A-Frame styles don't interfere.
     document.head.insertAdjacentHTML('beforeend', 
       '<style>html,body {background-color: transparent !important;}</style>');
