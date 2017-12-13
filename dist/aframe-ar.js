@@ -699,6 +699,36 @@
 	    var worldpos = new THREE.Vector3();
 	          
 	    // The desired function, which this returns.
+
+	    // If we detect Mozilla's WebXR Viewer, use its implementation of hitAR.
+	    if (window.webkit && window.webkit.messageHandlers.initAR) {
+	      return function () {
+	/*
+	window.webkit.messageHandlers.hitTest.postMessage({
+	  x: x,
+	  y: y,
+	  type: 27, // ARKitWrapper.HIT_TEST_TYPE_ALL
+	  callback: this._createPromiseCallback('hitTest', resolve)
+	})
+	*/
+	        // For testing at the moment, force a hit at (0,0,0)
+	        this.el.object3D.getWorldPosition(worldpos);
+	        return [{
+	          distance: hitpoint.distanceTo(worldpos),
+	          point: hitpoint, // Vector3
+	          object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
+	/*
+	          // We don't have any of these properties...
+	          face: undefined, // Face3
+	          faceIndex: undefined,
+	          index: undefined,
+	          uv: undefined // Vector2
+	*/
+	        }];
+	      }
+	    }
+
+	    // No WebXR Viewer, so it's either three-ar or nothing.
 	    return function () {
 	      var threear = this.el.sceneEl.components['three-ar'];
 	      if (!threear || !threear.arDisplay || !threear.arDisplay.hitTest) { return []; }
