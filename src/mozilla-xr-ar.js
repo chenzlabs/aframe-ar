@@ -7,8 +7,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
     init: function () {
         this.onInit = this.onInit.bind(this);
         this.onWatch = this.onWatch.bind(this);
-        window['arkitCallback' + 0] = this.onInit;
-        window['arkitCallback' + 1] = this.onWatch;
 
         this.poseMatrix = new THREE.Matrix4();
         this.posePosition = new THREE.Vector3();
@@ -61,6 +59,18 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // Check if the low-level WebXR Viewer interfaces are there.
         if (!window.webkit || !window.webkit.messageHandlers) { return; }
         if (!window.webkit.messageHandlers.initAR) { return; }
+
+        // Ugly hack to get around WebXR Viewer resizing issue.
+        setTimeout(function () {
+            var scene = AFRAME.scenes[0];
+            scene.canvas.style.position = "absolute !important";
+            scene.canvas.style.width = "100% !important";
+            scene.canvas.style.height = "100% !important";
+            setTimeout(function () { scene.resize(); });
+        }, 1000);
+
+        window['arkitCallback' + 0] = this.onInit;
+        window['arkitCallback' + 1] = this.onWatch;
 
         // Compose data to use with initAR.
         var data = {
