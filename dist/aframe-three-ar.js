@@ -49,6 +49,7 @@
 	__webpack_require__(3);
 	__webpack_require__(4);
 	__webpack_require__(5);
+	__webpack_require__(6);
 
 
 
@@ -117,32 +118,13 @@
 
 	        // Can use either left or right projection matrix; pick left for now.
 	        this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
-
-	        // If we've taken over a camera, update it.  If not, we're done.
-	        if (!this.arCamera) { return; }
-
-	        var camera = this.arCamera;
-
-	        // Apply the pose position via setAttribute,
-	        // so that other A-Frame components can see the values.
-	        camera.el.setAttribute('position', this.posePosition);
-
-	        // Apply the pose rotation via setAttribute,
-	        // so that other A-Frame components can see the values.
-	        camera.el.setAttribute('rotation', this.poseRotation);
-
-	        // Apply the projection matrix, if we're not in VR.
-	        if (!this.el.sceneEl.is('vr-mode')) {
-	          camera.projectionMatrix = this.projectionMatrix;
-	        }
 	    },
 
 	    takeOverCamera: function (camera) {
 	        this.arCamera = camera;
 	        camera.isARPerspectiveCamera = true; // HACK - is this necessary?
 	        camera.vrDisplay = this.arDisplay; // HACK - is this necessary?
-	        // ARKit/Core will give us rotation, don't compound it with look-controls.
-	        camera.el.setAttribute('look-controls', { enabled: false });
+	        camera.el.setAttribute('ar-camera', 'enabled', true);
 	    },
 
 	    onceSceneLoaded: function () {
@@ -442,34 +424,12 @@
 	        }
 	    },
 
-	    tick: function (t, dt) {
-	        if (!this.arDisplay) { return; }
-
-	        // Get the ARKit/Core frame data with pose and projection matrix.
-	        // Note: if we have any, we've already decomposed it.
-	        if (!this.frameData) { return; }
-
-	        // If we've taken over a camera, update it.  If not, we're done.
-	        if (!this.arCamera) { return; }
-
-	        var camera = this.arCamera;
-
-	        // Apply the pose position via setAttribute,
-	        // so that other A-Frame components can see the values.
-	        camera.el.setAttribute('position', this.posePosition);
-
-	        // Apply the pose rotation via setAttribute,
-	        // so that other A-Frame components can see the values.
-	        camera.el.setAttribute('rotation', this.poseRotation);
-
-	        // Apply the projection matrix.
-	        camera.projectionMatrix = this.projectionMatrix;
-	    },
+	    // For WebXR Viewer, we are currently directly hooking the callback
+	    // used to provide frame data, so we don't need to do anything in tick!
 
 	    takeOverCamera: function (camera) {
 	        this.arCamera = camera;
-	        // ARKit/Core will give us rotation, don't compound it with look-controls.
-	        camera.el.setAttribute('look-controls', { enabled: false });
+	        camera.el.setAttribute('ar-camera', 'enabled', true);
 	    },
 
 	    onceSceneLoaded: function () {
@@ -654,6 +614,68 @@
 
 /***/ }),
 /* 5 */
+/***/ (function(module, exports) {
+
+	AFRAME.registerComponent('ar-camera', {
+	  schema: {
+	    enabled: {default:true}
+	  },
+
+	  init: function () {
+	    this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
+	  },
+
+	  update: function (oldData) {
+	    if (!oldData || oldData.enabled !== this.data.enabled) {
+	      // Value changed, so react accordingly.
+	      if (this.data.enabled) {
+	        // Save camera look-controls enabled, and turn off for AR.
+	        this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
+	        this.el.setAttribute('look-controls', 'enabled', false);
+	      } else {
+	        // Restore camera look-controls enabled.
+	        this.el.setAttribute('look-controls', 'enabled',
+	          this.wasLookControlsEnabled === true);
+	      }
+	    }
+	  },
+	  
+	  tick: function (t, dt) {
+	    if (!this.data.enabled) { return; }
+	    
+	    var whichar = this.checkWhichAR();
+	    if (!whichar) { return; }
+	    
+	    // Apply the pose position via setAttribute,
+	    // so that other A-Frame components can see the values.
+	    this.el.setAttribute('position', whichar.getPosition());
+
+	    // Apply the pose rotation via setAttribute,
+	    // so that other A-Frame components can see the values.
+	    this.el.setAttribute('rotation', whichar.getRotation());
+
+	    // Apply the projection matrix, if we're not in VR.
+	    if (!this.el.sceneEl.is('vr-mode')) {
+	      this.el.components.camera.projectionMatrix = whichar.getProjectionMatrix();
+	    }    
+	  },
+	  
+	  checkWhichAR: function () {
+	    if (!this.whichar) {
+	      var whichar = this.el.sceneEl.components['three-ar'];
+	      if (!whichar || !whichar.arDisplay) {
+	        whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+	      }
+	      if (!whichar || !whichar.arDisplay) { return; }
+	      this.whichar = whichar;
+	    }
+	    return this.whichar;
+	  }  
+	});
+
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports) {
 
 	// ar-raycaster modifies raycaster to append AR hit, if any.
