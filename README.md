@@ -1,7 +1,10 @@
 # aframe-ar
 Basic [A-Frame](https://aframe.io) support for browser-based augmented reality (AR), 
-using the new [three.ar.js](https://github.com/google-ar/three.ar.js) library 
+supporting the new [three.ar.js](https://github.com/google-ar/three.ar.js) library 
 and [WebARonARKit / WebARonARCore browsers](https://developers.google.com/ar/develop/web/getting-started).
+
+Also, basic camera passthrough and pose support for [Mozilla's WebXR Viewer using ARKit](https://blog.mozilla.org/blog/2017/10/20/bringing-mixed-reality-web/) has recently been added; 
+additional features may be supported in future versions of [WebXR Viewer](https://itunes.apple.com/us/app/webxr-viewer/id1295998056).
 
 By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene declaration:
 
@@ -48,3 +51,4 @@ Reference links:
 - https://aframe.io
 - https://github.com/google-ar/three.ar.js
 - https://developers.google.com/ar/develop/web/getting-started
+- https://blog.mozilla.org/blog/2017/10/20/bringing-mixed-reality-web/
