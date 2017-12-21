@@ -59,32 +59,13 @@ AFRAME.registerComponent('three-ar', {
 
         // Can use either left or right projection matrix; pick left for now.
         this.projectionMatrix.fromArray(this.frameData.leftProjectionMatrix);
-
-        // If we've taken over a camera, update it.  If not, we're done.
-        if (!this.arCamera) { return; }
-
-        var camera = this.arCamera;
-
-        // Apply the pose position via setAttribute,
-        // so that other A-Frame components can see the values.
-        camera.el.setAttribute('position', this.posePosition);
-
-        // Apply the pose rotation via setAttribute,
-        // so that other A-Frame components can see the values.
-        camera.el.setAttribute('rotation', this.poseRotation);
-
-        // Apply the projection matrix, if we're not in VR.
-        if (!this.el.sceneEl.is('vr-mode')) {
-          camera.projectionMatrix = this.projectionMatrix;
-        }
     },
 
     takeOverCamera: function (camera) {
         this.arCamera = camera;
         camera.isARPerspectiveCamera = true; // HACK - is this necessary?
         camera.vrDisplay = this.arDisplay; // HACK - is this necessary?
-        // ARKit/Core will give us rotation, don't compound it with look-controls.
-        camera.el.setAttribute('look-controls', { enabled: false });
+        camera.el.setAttribute('ar-camera', 'enabled', true);
     },
 
     onceSceneLoaded: function () {

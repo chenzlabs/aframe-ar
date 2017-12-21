@@ -25,34 +25,12 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         }
     },
 
-    tick: function (t, dt) {
-        if (!this.arDisplay) { return; }
-
-        // Get the ARKit/Core frame data with pose and projection matrix.
-        // Note: if we have any, we've already decomposed it.
-        if (!this.frameData) { return; }
-
-        // If we've taken over a camera, update it.  If not, we're done.
-        if (!this.arCamera) { return; }
-
-        var camera = this.arCamera;
-
-        // Apply the pose position via setAttribute,
-        // so that other A-Frame components can see the values.
-        camera.el.setAttribute('position', this.posePosition);
-
-        // Apply the pose rotation via setAttribute,
-        // so that other A-Frame components can see the values.
-        camera.el.setAttribute('rotation', this.poseRotation);
-
-        // Apply the projection matrix.
-        camera.projectionMatrix = this.projectionMatrix;
-    },
+    // For WebXR Viewer, we are currently directly hooking the callback
+    // used to provide frame data, so we don't need to do anything in tick!
 
     takeOverCamera: function (camera) {
         this.arCamera = camera;
-        // ARKit/Core will give us rotation, don't compound it with look-controls.
-        camera.el.setAttribute('look-controls', { enabled: false });
+        camera.el.setAttribute('ar-camera', 'enabled', true);
     },
 
     onceSceneLoaded: function () {
