@@ -34,17 +34,17 @@ Basic usage:
 Examples:
 
 Basic AR camera: https://aframe-ar.glitch.me
-- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar?path=public/index.html)
+- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar?path=public/index.html)
 
 `ar-raycaster` usage: https://aframe-ar-raycaster-logo-test.glitch.me/ar.html
-- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-raycaster-logo-test?path=ar.html)
+- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-raycaster-logo-test?path=ar.html)
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
-- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-plane?path=index.html)
+- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
 
 https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
 - (as seen at https://twitter.com/machenmusik/status/915692630926938112)
-- (remix with Glitch here: https://glitch.com/edit/#!/aframe-ar-dragonites?path=index.html)
+- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-dragonites?path=index.html)
 
 Reference links:
 
