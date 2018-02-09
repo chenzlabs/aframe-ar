@@ -26,7 +26,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         }
 
         // Add planes handling, so we can do synchronous hit test.
-        // From webxr-polyfill/ARKitWrapper.js
+        // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
         this.planes_ = new Map();
         this.anchors_ = new Map();
@@ -166,7 +166,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         }
 
         // Add planes handling, so we can do synchronous hit test.
-        // From webxr-polyfill/ARKitWrapper.js
+        // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
         var i;
 
@@ -253,7 +253,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
     },
 
     // Use planes to do synchronous hit test.
-    // From webxr-polyfill/ARKitWrapper.js
+    // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
     getPlanes: function () {
         return Array.from(this.planes_.values());
