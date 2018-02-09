@@ -32,42 +32,22 @@ AFRAME.registerComponent('ar-raycaster', {
     return results.concat(this.hitAR());
   },        
         
-  hitAR: (function () {          
-    // Temporary variables, only within closure scope.
-    var transform = new THREE.Matrix4();
-    var hitpoint = new THREE.Vector3();
-    var hitquat = new THREE.Quaternion();
-    var hitscale = new THREE.Vector3();
-    var worldpos = new THREE.Vector3();
-          
-    // The desired function, which this returns.
-    return function () {
-      var threear = this.el.sceneEl.components['three-ar'];
-      if (!threear || !threear.arDisplay || !threear.arDisplay.hitTest) { return []; }
+  hitAR: function () {
+    var whichar = this.checkWhichAR();
+    if (!whichar || !whichar.arDisplay) { return []; }
+    return whichar.hitAR(this.data.x, this.data.y, this.data.el, this.el);
+  },
 
-      var hit = threear.arDisplay.hitTest(this.data.x, this.data.y);
-      if (!hit || hit.length <= 0) {
-        // No AR hit.
-        return [];
+  checkWhichAR: function () {
+    if (!this.whichar) {
+      var whichar = this.el.sceneEl.components['three-ar'];
+      if (!whichar || !whichar.arDisplay) {
+        whichar = this.el.sceneEl.components['mozilla-xr-ar'];
       }
-            
-      // At least one hit.  For now, only process the first AR hit.
-      transform.fromArray(hit[0].modelMatrix);
-      transform.decompose(hitpoint, hitquat, hitscale);
-      this.el.object3D.getWorldPosition(worldpos);
-      return [{
-        distance: hitpoint.distanceTo(worldpos),
-        point: hitpoint, // Vector3
-        object: (this.data.el && this.data.el.object3D) || this.el.sceneEl.object3D
-/*
-        // We don't have any of these properties...
-        face: undefined, // Face3
-        faceIndex: undefined,
-        index: undefined,
-        uv: undefined // Vector2                
-*/                  
-      }];
-    }        
-  })()
+      if (!whichar || !whichar.arDisplay) { return; }
+      this.whichar = whichar;
+    }
+    return this.whichar;
+  }
 });
 

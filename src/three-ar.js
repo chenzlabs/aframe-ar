@@ -124,5 +124,43 @@ AFRAME.registerComponent('three-ar', {
     getProjectionMatrix: function () {
         if (!this.arDisplay || !this.arDisplay.getFrameData) { return null; }
         return this.projectionMatrix;
-    }
+    },
+
+    hitAR: (function () {          
+        // Temporary variables, only within closure scope.
+        var transform = new THREE.Matrix4();
+        var hitpoint = new THREE.Vector3();
+        var hitquat = new THREE.Quaternion();
+        var hitscale = new THREE.Vector3();
+        var worldpos = new THREE.Vector3();
+          
+        // The desired function, which this returns.
+        return function (x, y, el, raycasterEl) {
+            var threear = this;
+            if (!this.arDisplay || !this.arDisplay.hitTest) { return []; }
+
+            var hit = this.arDisplay.hitTest(x, y);
+            if (!hit || hit.length <= 0) {
+                // No AR hit.
+                return [];
+            }
+            
+            // At least one hit.  For now, only process the first AR hit.
+            transform.fromArray(hit[0].modelMatrix);
+            transform.decompose(hitpoint, hitquat, hitscale);
+            raycasterEl.object3D.getWorldPosition(worldpos);
+            return [{
+                distance: hitpoint.distanceTo(worldpos),
+                point: hitpoint, // Vector3
+                object: (el && el.object3D) || this.el.sceneEl.object3D
+/*
+                // We don't have any of these properties...
+                face: undefined, // Face3
+                faceIndex: undefined,
+                index: undefined,
+                uv: undefined // Vector2                
+*/                  
+            }];
+        }        
+    })()
 });

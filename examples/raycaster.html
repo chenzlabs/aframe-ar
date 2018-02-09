@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+    <script src="build.js"></script>
+    <script>
+      AFRAME.registerComponent('samsung-logo', {
+        init: function () {
+          var el = this.el;
+          var purple = new THREE.MeshBasicMaterial();
+          purple.color = new THREE.Color('#706CF5');
+          var white = new THREE.MeshBasicMaterial();
+          white.color = new THREE.Color('#ffffff');
+          el.addEventListener('model-loaded', function () {
+            el.object3D.traverse(function (o) {
+              if (o.material) o.material = o.material.name === 'Purple' ? purple : white;
+            })
+          });
+        }
+      });
+
+      const content = `
+      <a-entity obj-model="obj: #samsung-internet-obj;mtl: #samsung-internet-mtl" samsung-logo >
+        <a-animation from="0 -360 45" to="0 0 0" easing="ease-out-back" begin="model-loaded" dur="3000"></a-animation>
+        <a-animation from="0 0 0" to="1 1 1" easing="ease-out-back" begin="model-loaded" dur="2000" attribute="scale"></a-animation>
+        <a-animation from="0 -1 0" to="0 0 0" easing="ease-out-back" begin="model-loaded" dur="1000" attribute="position"></a-animation>
+      </a-entity>`;
+      
+      window.addEventListener('click', function () {
+        // Put the logo where the mark is.
+        var mark = document.querySelector('#mark');
+        var el = document.createElement('a-entity');
+        AFRAME.scenes[0].appendChild(el);
+        el.innerHTML = content;
+        el.setAttribute('scale', '0.1, 0.1, 0.1');
+        el.setAttribute('position', mark.getAttribute('position'));
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene ar>           
+      <a-assets>
+        <a-asset-item src="https://cdn.glitch.com/843c8e83-ac9e-499e-8aba-1332cd1fe4a6%2Fsilogo.mtl?1502470550479" id="samsung-internet-mtl"></a-asset-item>
+        <a-asset-item src="https://cdn.glitch.com/843c8e83-ac9e-499e-8aba-1332cd1fe4a6%2Fsilogo_small.obj?1502705824920" id="samsung-internet-obj"></a-asset-item>
+      </a-assets>      
+      <!-- Use AR raycaster, and set raycaster to ignore all A-Frame objects like logos. -->
+      <a-entity ar-raycaster raycaster="objects:none"></a-entity>
+      <!-- Declare a ring to use as the raycaster intersection mark. -->
+      <a-ring id="mark" rotation="-90 0 0" radius-inner="0.01" radius-outer="0.02"></a-ring>
+      <a-camera>
+        <a-text id="hud" align="center" wrap-count="800" position="0 -0.1 -0.25" value="heads up"></a-text>
+      </a-camera>
+    </a-scene>
+    <script>
+      var raycaster = document.querySelector('[ar-raycaster]');
+      var mark = document.querySelector('#mark');
+      
+      raycaster.addEventListener('raycaster-intersection', function (evt) {
+        // Turn the mark green and move it to the intersection point.
+        mark.setAttribute('color', 'green');
+        // FIXME: lerp position
+        mark.setAttribute('position', evt.detail.intersections[0].point);
+      });
+      
+      raycaster.addEventListener('raycaster-intersection-cleared', function (evt) {
+        // Turn the mark red.  FIXME: lerp position
+        mark.setAttribute('color', 'red');
+      });      
+    </script>
+  </body>
+</html>
