@@ -169,19 +169,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // From webxr-polyfill/ARKitWrapper.js
 
         var i;
-/*
-        var valueString =  
-          'position X: ' + JSON.stringify(this.posePosition.x) + '\n' +
-          'position Y: ' + JSON.stringify(this.posePosition.y) + '\n' +
-          'position Z: ' + JSON.stringify(this.posePosition.z) + '\n' +
-          'rotation X: ' + JSON.stringify(this.poseRotation.x) + '\n' +
-          'rotation Y: ' + JSON.stringify(this.poseRotation.y) + '\n' +
-          'rotation Z: ' + JSON.stringify(this.poseRotation.z);
-*/
+
         if(data.newObjects && data.newObjects.length){
-/*
-          valueString += '\nnewObjects:';
-*/
           for (i = 0; i < data.newObjects.length; i++) {
             var element = data.newObjects[i];
             if(element.h_plane_center){
@@ -191,13 +180,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                 extent: [element.h_plane_extent.x, element.h_plane_extent.z],
                 modelMatrix: element.transform
               });
-/*
-              valueString += 
-              '\n' + element.h_plane_center.x.toFixed(3)
-              + ',' + element.h_plane_center.y.toFixed(3)
-              + ',' + element.h_plane_center.z.toFixed(3)
-               + ':' + element.h_plane_extent.x.toFixed(3) + 'x' + element.h_plane_extent.z.toFixed(3);
-*/
             }else{
               this.anchors_.set(element.uuid, {
                 id: element.uuid,
@@ -208,19 +190,10 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         }
 
         if(data.removedObjects && data.removedObjects.length){
-/*
-          valueString += '\nremovedObjects:';
-*/
           for (i = 0; i < data.removedObjects.length; i++) {
             var element = data.removedObjects[i];
             if(element.h_plane_center){
               this.planes_.delete(element.uuid);
-/*
-              valueString += 
-              '\n' + element.h_plane_center.x.toFixed(3)
-              + ',' + element.h_plane_center.y.toFixed(3)
-              + ',' + element.h_plane_center.z.toFixed(3);
-*/
             }else{
               this.anchors_.delete(element.uuid);
             }
@@ -228,9 +201,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         }
 
         if(data.objects && data.objects.length){
-/*
-          valueString += '\nobjects:';
-*/
           for (i = 0; i < data.objects.length; i++) {
             var element = data.objects[i];
             if(element.h_plane_center){
@@ -247,13 +217,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                 plane.extent = [element.h_plane_extent.x, element.h_plane_extent.z];
                 plane.transform = element.transform;
               }
-/*
-              valueString += 
-              '\n' + plane.center.x.toFixed(3)
-              + ',' + plane.center.y.toFixed(3)
-              + ',' + plane.center.z.toFixed(3)
-               + ':' + plane.extent[0].toFixed(3) + 'x' + plane.extent[1].toFixed(3);
-*/
             }else{
               var anchor = this.anchors_.get(element.uuid);
               if(!anchor){
@@ -267,9 +230,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             }
           }
         }
-/*
-        document.querySelector('#hud').setAttribute('value', valueString);
-*/
     },
 
     getPosition: function () {
@@ -431,14 +391,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 				 hitVars.worldRayStart
 			 ).normalize();
 
-                         var valueString = 
-                           'worldRayStart ' + hitVars.worldRayStart.x.toFixed(3) +
-                           ',' + hitVars.worldRayStart.y.toFixed(3) +
-                           ',' + hitVars.worldRayStart.z.toFixed(3) +
-                           '\nworldRayDir ' + hitVars.worldRayDir.x.toFixed(3) +
-                           ',' + hitVars.worldRayDir.y.toFixed(3) +
-                           ',' + hitVars.worldRayDir.z.toFixed(3);
-
 			 // Go through all the anchors and test for intersections with the ray.
 			 for (var i = 0; i < planes.length; i++) {
 				 var plane = planes[i];
@@ -462,12 +414,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 					 hitVars.worldRayDir
 				 );
 
-                           valueString += 
-                           '\nplanePosition ' + hitVars.planePosition.x.toFixed(3) +
-                           ',' + hitVars.planePosition.y.toFixed(3) +
-                           ',' + hitVars.planePosition.z.toFixed(3) +
-                           ': ' + t.toFixed(3);
-
 				 // if t < 0, there is no intersection.
 				 if (t < 0) {
 					 continue;
@@ -481,11 +427,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 				 );
 				 // Get the plane extents (extents are in plane local space).
 				 hitVars.planeExtent.set(plane.extent[0], 0, plane.extent[1]);
-                           valueString += 
-                           '\nplaneIntersection ' + hitVars.planeIntersection.x.toFixed(3) +
-                           ',' + hitVars.planeIntersection.y.toFixed(3) +
-                           ',' + hitVars.planeIntersection.z.toFixed(3);
- 
 				 /*
 					 ///////////////////////////////////////////////
 					 // Test by converting extents to world-space.
@@ -513,14 +454,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 				 hitVars.planeMatrixInverse.getInverse(hitVars.planeMatrix);
 				 hitVars.planeIntersectionLocal.copy(hitVars.planeIntersection)
 					 .applyMatrix4(hitVars.planeMatrixInverse);
-                           valueString += 
-                           '\nplaneIntersectionLocal ' + hitVars.planeIntersectionLocal.x.toFixed(3) +
-                           ',' + hitVars.planeIntersectionLocal.y.toFixed(3) +
-                           ',' + hitVars.planeIntersectionLocal.z.toFixed(3);
-                           valueString += 
-                           '\nplaneExtent ' + hitVars.planeExtent.x.toFixed(3) +
-                           ',' + hitVars.planeExtent.y.toFixed(3) +
-                           ',' + hitVars.planeExtent.z.toFixed(3);
  
 				 // Check if intersection is outside of the extent of the anchor.
 				 // Tolerance is added to match the behavior of the native hitTest call.
@@ -541,8 +474,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 				 ////////////////////////////////////////////////
  
 				 // The intersection is valid - create a matrix from hit position.
-                           valueString += 
-                           '\nhit ' + i;
 				 hitVars.planeHit.makeTranslation(
                                    hitVars.planeIntersection.x,
                                    hitVars.planeIntersection.y,
@@ -558,9 +489,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
 			 // Sort the hits by distance.
 			 hits.sort(sortFunction);
-                           valueString += 
-                           '\nhits ' + hits.length;
-                         ///document.querySelector('#hud').setAttribute('value', valueString);
 			 return hits;
 		 };
     })(),
@@ -587,17 +515,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             transform.fromArray(hit[0].modelMatrix);
             transform.decompose(hitpoint, hitquat, hitscale);
             raycasterEl.object3D.getWorldPosition(worldpos);
-document.querySelector('#hud').setAttribute('value',
-  hitpoint.distanceTo(worldpos).toFixed(3)
-+
-  '\nhitpoint ' + hitpoint.x.toFixed(3) +
-  ',' + hitpoint.y.toFixed(3) +
-  ',' + hitpoint.z.toFixed(3)
-+
-  '\nworldpos' + worldpos.x.toFixed(3) +
-  ',' + worldpos.y.toFixed(3) +
-  ',' + worldpos.z.toFixed(3)
-);
 
             return [{
                 distance: hitpoint.distanceTo(worldpos),
