@@ -1,7 +1,7 @@
 {
   "name": "aframe-ar",
-  "version": "0.1.0",
-  "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit / WebARonARCore browsers.",
+  "version": "0.2.0",
+  "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit/Core browsers, as well as WebXR Viewer.",
   "main": "src/index.js",
   "scripts": {
     "build": "browserify src/index.js -o examples/build.js",
