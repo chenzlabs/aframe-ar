@@ -38,7 +38,7 @@ AFRAME.registerComponent('ar-camera', {
 
     // Apply the projection matrix, if we're not in VR.
     if (!this.el.sceneEl.is('vr-mode')) {
-      this.el.components.camera.projectionMatrix = whichar.getProjectionMatrix();
+      this.el.components.camera.camera.projectionMatrix = whichar.getProjectionMatrix();
     }    
   },
   
