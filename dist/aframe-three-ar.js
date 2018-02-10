@@ -463,7 +463,7 @@
 	        }
 
 	        // Add planes handling, so we can do synchronous hit test.
-	        // From webxr-polyfill/ARKitWrapper.js
+	        // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
 	        this.planes_ = new Map();
 	        this.anchors_ = new Map();
@@ -603,7 +603,7 @@
 	        }
 
 	        // Add planes handling, so we can do synchronous hit test.
-	        // From webxr-polyfill/ARKitWrapper.js
+	        // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
 	        var i;
 
@@ -690,7 +690,7 @@
 	    },
 
 	    // Use planes to do synchronous hit test.
-	    // From webxr-polyfill/ARKitWrapper.js
+	    // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
 	    getPlanes: function () {
 	        return Array.from(this.planes_.values());
@@ -1047,7 +1047,7 @@
 
 	    // Apply the projection matrix, if we're not in VR.
 	    if (!this.el.sceneEl.is('vr-mode')) {
-	      this.el.components.camera.projectionMatrix = whichar.getProjectionMatrix();
+	      this.el.components.camera.camera.projectionMatrix = whichar.getProjectionMatrix();
 	    }    
 	  },
 	  
