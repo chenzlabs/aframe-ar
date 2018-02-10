@@ -1,10 +1,8 @@
 # aframe-ar
 Basic [A-Frame](https://aframe.io) support for browser-based augmented reality (AR), 
 supporting the new [three.ar.js](https://github.com/google-ar/three.ar.js) library 
-and [WebARonARKit / WebARonARCore browsers](https://developers.google.com/ar/develop/web/getting-started).
-
-Also, basic camera passthrough and pose support for [Mozilla's WebXR Viewer using ARKit](https://blog.mozilla.org/blog/2017/10/20/bringing-mixed-reality-web/) has recently been added; 
-additional features may be supported in future versions of [WebXR Viewer](https://itunes.apple.com/us/app/webxr-viewer/id1295998056).
+and [WebARonARKit/Core browsers](https://developers.google.com/ar/develop/web/getting-started),
+as well as [WebXR Viewer](https://blog.mozvr.com/experimenting-with-ar-and-the-web-on-ios/).
 
 By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene declaration:
 
@@ -41,14 +39,16 @@ Basic AR camera: https://aframe-ar.glitch.me
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
+- NOTE: WebXR Viewer support does not yet include plane features.
 
 https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
 - (as seen at https://twitter.com/machenmusik/status/915692630926938112)
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-dragonites?path=index.html)
+- NOTE: WebXR Viewer does not appear to fully support this example.
 
 Reference links:
 
 - https://aframe.io
 - https://github.com/google-ar/three.ar.js
 - https://developers.google.com/ar/develop/web/getting-started
-- https://blog.mozilla.org/blog/2017/10/20/bringing-mixed-reality-web/
+- https://blog.mozvr.com/experimenting-with-ar-and-the-web-on-ios/
