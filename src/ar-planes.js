@@ -1,5 +1,27 @@
-AFRAME.registerComponent('three-ar-planes', {
-  dependencies: ['three-ar'],
+AFRAME.registerComponent('ar-planes', {
+
+  getPlaneSource: function () {
+    var whichar;
+    if (!this.planeSource) {
+      whichar = this.el.sceneEl.components['three-ar'];
+      if (whichar && whichar.arDisplay) {
+        this.planeSource = whichar.arDisplay;
+      }
+    }
+    if (!this.planeSource) {
+      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+      if (whichar && whichar.arDisplay) {
+        this.planeSource = whichar;
+      }
+    }
+    return this.planeSource;
+  },
+
+  getPlanes: function () {
+    var planeSource = this.getPlaneSource();
+    if (!planeSource || !planeSource.getPlanes) return undefined;
+    return planeSource.getPlanes();
+  },
 
   init: function () {
     // Remember planes when we see them.
@@ -25,13 +47,9 @@ AFRAME.registerComponent('three-ar-planes', {
 
     // The actual function, which we return.
     return function (t, dt) {
-      // Check to see if the anchor list is available.
-      var threear = this.el.components['three-ar'];
-      if (!threear || !threear.arDisplay) { return; }
-      var arDisplay = threear.arDisplay;
-
       // Get the list of planes.
-      var planes = arDisplay.getPlanes ? arDisplay.getPlanes() : arDisplay.anchors_;
+      var planes = this.getPlanes();
+      if (!planes) { return; }
 
       // Ideally we would have either events, or separate lists for added / updated / removed.
       var addedThese = [];
@@ -144,9 +162,11 @@ AFRAME.registerComponent('three-ar-planes', {
             modelMatrix: planespec.modelMatrix.slice(),
             extent: planespec.extent.slice()
           };
+/* WebXR Viewer problem? WebARon___ doesn't use.
           if (planespec.center) {
             this.planes[id].center = planespec.center.slice();
           }
+*/
           if (planespec.vertices) {
             this.planes[id].vertices = planespec.vertices.slice();
           }
