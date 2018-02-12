@@ -39,7 +39,6 @@ Basic AR camera: https://aframe-ar.glitch.me
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
-- NOTE: WebXR Viewer support does not yet include plane features.
 
 https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
 - (as seen at https://twitter.com/machenmusik/status/915692630926938112)
