@@ -3,13 +3,13 @@ AFRAME.registerComponent('ar-planes', {
   getPlaneSource: function () {
     var whichar;
     if (!this.planeSource) {
-      whichar = this.el.components['three-ar'];
+      whichar = this.el.sceneEl.components['three-ar'];
       if (whichar && whichar.arDisplay) {
         this.planeSource = whichar.arDisplay;
       }
     }
     if (!this.planeSource) {
-      whichar = this.el.components['mozilla-xr-ar'];
+      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
       if (whichar && whichar.arDisplay) {
         this.planeSource = whichar;
       }
@@ -162,9 +162,11 @@ AFRAME.registerComponent('ar-planes', {
             modelMatrix: planespec.modelMatrix.slice(),
             extent: planespec.extent.slice()
           };
+/* WebXR Viewer problem? WebARon___ doesn't use.
           if (planespec.center) {
             this.planes[id].center = planespec.center.slice();
           }
+*/
           if (planespec.vertices) {
             this.planes[id].vertices = planespec.vertices.slice();
           }
