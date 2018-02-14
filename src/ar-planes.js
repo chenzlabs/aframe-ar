@@ -26,12 +26,12 @@ AFRAME.registerComponent('ar-planes', {
   init: function () {
     // Remember planes when we see them.
     this.planes = {};
-    this.anchorsAdded = [];
-    this.anchorsAddedDetail = {type:'added', anchors: this.anchorsAdded};
-    this.anchorsUpdated = [];
-    this.anchorsUpdatedDetail = {type:'updated', anchors: this.anchorsUpdated};
-    this.anchorsRemoved = [];
-    this.anchorsRemovedDetail = {type:'removed', anchors: this.anchorsRemoved};
+    this.planesAdded = [];
+    this.planesAddedDetail = {type:'added', anchors: this.planesAdded};
+    this.planesUpdated = [];
+    this.planesUpdatedDetail = {type:'updated', anchors: this.planesUpdated};
+    this.planesRemoved = [];
+    this.planesRemovedDetail = {type:'removed', anchors: this.planesRemoved};
   },
 
   tick: (function (t, dt) {
@@ -187,34 +187,54 @@ AFRAME.registerComponent('ar-planes', {
       // from which we can emit appropriate events downstream.
 
       // Replace the old list.
-      this.anchorsAdded = addedThese;
+      this.planesAdded = addedThese;
       // Emit event if list isn't empty.
       if (addedThese.length > 0) {
         // Reuse the same event detail to avoid making garbage.
         // TODO: Reuse same CustomEvent?
-        this.anchorsAddedDetail.anchors = addedThese;
-        this.el.emit('anchorsadded', this.anchorsAddedDetail);
+        this.planesAddedDetail.anchors = addedThese;
+        this.el.emit('planesadded', this.planesAddedDetail);
       }
 
       // Replace the old list.
-      this.anchorsUpdated = updatedThese;
+      this.planesUpdated = updatedThese;
       // Emit event if list isn't empty.
       if (updatedThese.length > 0) {
         // Reuse the same event detail to avoid making garbage.
         // TODO: Reuse same CustomEvent?
-        this.anchorsUpdatedDetail.anchors = updatedThese;
-        this.el.emit('anchorsupdated', this.anchorsUpdatedDetail);
+        this.planesUpdatedDetail.anchors = updatedThese;
+        this.el.emit('planesupdated', this.planesUpdatedDetail);
       }
 
       // Replace the old list.
-      this.anchorsRemoved = removedThese;
+      this.planesRemoved = removedThese;
       // Emit event if list isn't empty.
       if (removedThese.length > 0) {
         // Reuse the same event detail to avoid making garbage.
         // TODO: Reuse same CustomEvent?
-        this.anchorsRemovedDetail.anchors = removedThese;
-        this.el.emit('anchorsremoved', this.anchorsRemovedDetail);
+        this.planesRemovedDetail.anchors = removedThese;
+        this.el.emit('planesremoved', this.planesRemovedDetail);
       }
     };    
   })()
 });
+
+AFRAME.registerComponent('ar-planes-as-anchors', {
+  planes2anchors: function (evt) {
+    this.el.emit('anchors' + evt.detail.type, evt.detail);
+  },
+  init: function () {
+    this.planes2anchors = this.planes2anchors.bind(this);
+  },
+  play: function() {
+    this.el.addEventListener('planesadded', this.planes2anchors);
+    this.el.addEventListener('planesupdated', this.planes2anchors);
+    this.el.addEventListener('planesremoved', this.planes2anchors);
+  },
+  pause: function() {
+    this.el.removeEventListener('planesadded', this.planes2anchors);
+    this.el.removeEventListener('planesupdated', this.planes2anchors);
+    this.el.removeEventListener('planesremoved', this.planes2anchors);
+  }
+});
+
