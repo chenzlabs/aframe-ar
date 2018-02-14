@@ -228,7 +228,10 @@
       }      
       
       function onSceneLoaded() { 
+        var tempPos = new THREE.Vector3();
+        var tempQuat = new THREE.Quaternion();
         var tempScale = new THREE.Vector3();
+        var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
         var tempMat4 = new THREE.Matrix4();
         
         window.addEventListener('click', function() {
@@ -258,12 +261,17 @@
             var keys = Object.keys(sc.components['three-ar-planes'].planes);
             var msg = planes.length + ' (vs. ' + keys.length + ': ' + keys.join(',') + ')\n\n';
 */           
-            planes.forEach(function (plane) {              
+            planes.forEach(function (plane) {
+              // Decompose into pos / quat / scale, and make euler.
+              tempMat4.fromArray(plane.modelMatrix);
+              tempMat4.decompose(tempPos, tempQuat, tempScale);
+              tempEuler.setFromQuaternion(tempQuat);
+
               // Write out what we got, for debugging.
               msg += 
               'identifier: ' + plane.identifier + '' + // string, per latest spec
-              ' ' + JSON.stringify(plane.vector3) + '' + // unified to THREE.Vector3
-              ' ' + JSON.stringify(plane.rotation) + '' + // unified to THREE.Quaternion
+              ' ' + JSON.stringify(tempPos) + ''
+              ' ' + JSON.stringify(tempEuler.toVector3().multiplyScalar(THREE.Math.RAD2DEG)) + '' + 
               ' ' + plane.extent + '\n' + // number[2], per latest spec
               (plane.vertices ? ('vertices: ' + plane.vertices.length + '\n') : '') + // number[3*n], per latest spec
               '';
