@@ -101,6 +101,13 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             callback: 'arkitCallback1' // this.onWatch as window callback
         };
 
+        // Add resize handling.
+        window['arkitWindowResize'] = function () {
+            setTimeout(function() {
+                AFRAME.scenes[0].resize();
+            }, 100);
+        };
+
         // Start watching AR.
         window.webkit.messageHandlers.watchAR.postMessage(data);
 
