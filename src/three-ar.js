@@ -98,7 +98,7 @@ AFRAME.registerComponent('three-ar', {
 
             // Modify the scene renderer to allow ARView video passthrough.
             scene.renderer.alpha = true;
-            scene.renderer.autoClearColor = THREE.ARUtils.isARKit(display);
+            scene.renderer.autoClearColor = THREE.ARUtils.isARKit(display) && !window.WebARonARKitSendsCameraFrames;
             scene.renderer.autoClearDepth = true;
 
             // Create the ARView.
