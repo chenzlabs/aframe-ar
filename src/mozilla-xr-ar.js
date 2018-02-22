@@ -513,28 +513,28 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             if (!this.arDisplay) { return []; }
 
             var hit = this.hitTestNoAnchor(x, y);
-            if (!hit || hit.length <= 0) {
-                // No AR hit.
-                return [];
-            }
 
-            // At least one hit.  For now, only process the first AR hit.
-            transform.fromArray(hit[0].modelMatrix);
-            transform.decompose(hitpoint, hitquat, hitscale);
-            raycasterEl.object3D.getWorldPosition(worldpos);
+            // Process AR hits.
+            var hitsToReturn = [];
+            for (var i = 0; hit && i < hit.length; i++) {
+                transform.fromArray(hit[0].modelMatrix);
+                transform.decompose(hitpoint, hitquat, hitscale);
+                raycasterEl.object3D.getWorldPosition(worldpos);
 
-            return [{
-                distance: hitpoint.distanceTo(worldpos),
-                point: hitpoint, // Vector3
-                object: (el && el.object3D) || this.el.sceneEl.object3D
+                hitsToReturn.push({
+                    distance: hitpoint.distanceTo(worldpos),
+                    point: hitpoint, // Vector3
+                    object: (el && el.object3D) || this.el.sceneEl.object3D
 /*
-                // We don't have any of these properties...
-                face: undefined, // Face3
-                faceIndex: undefined,
-                index: undefined,
-                uv: undefined // Vector2
+                    // We don't have any of these properties...
+                    face: undefined, // Face3
+                    faceIndex: undefined,
+                    index: undefined,
+                    uv: undefined // Vector2
 */
-            }];
+                });
+            }
+            return hitsToReturn;
         }   
     })()
 });

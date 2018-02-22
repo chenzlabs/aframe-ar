@@ -140,27 +140,27 @@ AFRAME.registerComponent('three-ar', {
             if (!this.arDisplay || !this.arDisplay.hitTest) { return []; }
 
             var hit = this.arDisplay.hitTest(x, y);
-            if (!hit || hit.length <= 0) {
-                // No AR hit.
-                return [];
-            }
-            
-            // At least one hit.  For now, only process the first AR hit.
-            transform.fromArray(hit[0].modelMatrix);
-            transform.decompose(hitpoint, hitquat, hitscale);
-            raycasterEl.object3D.getWorldPosition(worldpos);
-            return [{
-                distance: hitpoint.distanceTo(worldpos),
-                point: hitpoint, // Vector3
-                object: (el && el.object3D) || this.el.sceneEl.object3D
+
+            // Process AR hits.
+            var hitsToReturn = [];
+            for (var i = 0; hit && i < hit.length; i++) {
+                transform.fromArray(hit[0].modelMatrix);
+                transform.decompose(hitpoint, hitquat, hitscale);
+                raycasterEl.object3D.getWorldPosition(worldpos);
+                hitsToReturn.push({
+                    distance: hitpoint.distanceTo(worldpos),
+                    point: hitpoint, // Vector3
+                    object: (el && el.object3D) || this.el.sceneEl.object3D
 /*
-                // We don't have any of these properties...
-                face: undefined, // Face3
-                faceIndex: undefined,
-                index: undefined,
-                uv: undefined // Vector2                
-*/                  
-            }];
+                    // We don't have any of these properties...
+                    face: undefined, // Face3
+                    faceIndex: undefined,
+                    index: undefined,
+                    uv: undefined // Vector2                
+*/
+                });
+            }
+            return hitsToReturn;
         }        
     })()
 });
