@@ -1133,7 +1133,13 @@
 	  hitAR: function () {
 	    var whichar = this.checkWhichAR();
 	    if (!whichar || !whichar.arDisplay) { return []; }
-	    return whichar.hitAR(this.data.x, this.data.y, this.data.el, this.el);
+	    var x = this.data.x;
+	    var y = this.data.y;
+	    if (arguments.length >= 2) {
+	      x = arguments[0];
+	      y = arguments[1];
+	    }
+	    return whichar.hitAR(x, y, this.data.el, this.el);
 	  },
 
 	  checkWhichAR: function () {
