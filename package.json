@@ -1,6 +1,6 @@
 {
   "name": "aframe-ar",
-  "version": "0.2.1",
+  "version": "0.2.1a",
   "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit/Core browsers, as well as WebXR Viewer.",
   "main": "src/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "webvr"
   ],
   "author": "Michael Chen <machenmusik@gmail.com>",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/chenzlabs/aframe-ar/issues"
   },
