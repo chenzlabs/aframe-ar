@@ -408,15 +408,21 @@
 
 	        var i;
 
+	        // WebXR Viewer returns geometry.vertices as an array of {x: number, y: number, y: number}
+	        // https://github.com/mozilla-mobile/webxr-ios/blob/c77b12c235e3960e2cd51538e086a38c83d8ec7c/XRViewer/ARKController/ARKController.m#L845
+	        // We transform this to a flatten array of number, like WebARonARCore.
+
 	        if(data.newObjects && data.newObjects.length){
 	          for (i = 0; i < data.newObjects.length; i++) {
 	            var element = data.newObjects[i];
-	            if(element.h_plane_center){
+	            if(element.plane_center){
 	              this.planes_.set(element.uuid, {
 	                id: element.uuid,
-	                center: element.h_plane_center,
-	                extent: [element.h_plane_extent.x, element.h_plane_extent.z],
-	                modelMatrix: element.transform
+	                center: element.plane_center,
+	                extent: [element.plane_extent.x, element.plane_extent.z],
+	                modelMatrix: element.transform,
+	                alignment: element.plane_alignment,
+	                vertices: [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }))
 	              });
 	            }else{
 	              this.anchors_.set(element.uuid, {
@@ -430,10 +436,10 @@
 	        if(data.removedObjects && data.removedObjects.length){
 	          for (i = 0; i < data.removedObjects.length; i++) {
 	            var element = data.removedObjects[i];
-	            if(element.h_plane_center){
-	              this.planes_.delete(element.uuid);
+	            if(this.planes_.get(element)){
+	              this.planes_.delete(element);
 	            }else{
-	              this.anchors_.delete(element.uuid);
+	              this.anchors_.delete(element);
 	            }
 	          }
 	        }
@@ -441,29 +447,33 @@
 	        if(data.objects && data.objects.length){
 	          for (i = 0; i < data.objects.length; i++) {
 	            var element = data.objects[i];
-	            if(element.h_plane_center){
+	            if(element.plane_center){
 	              var plane = this.planes_.get(element.uuid);
 	              if(!plane){
 	                this.planes_.set(element.uuid, {
 	                  id: element.uuid,
-	                  center: element.h_plane_center,
-	                  extent: [element.h_plane_extent.x, element.h_plane_extent.z],
-	                  transform: element.transform
+	                  center: element.plane_center,
+	                  extent: [element.plane_extent.x, element.plane_extent.z],
+	                  modelMatrix: element.transform,
+	                  alignment: element.plane_alignment,
+	                  vertices: [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }))
 	                });
 	              } else {
-	                plane.center = element.h_plane_center;
-	                plane.extent = [element.h_plane_extent.x, element.h_plane_extent.z];
-	                plane.transform = element.transform;
+	                plane.center = element.plane_center;
+	                plane.extent = [element.plane_extent.x, element.plane_extent.z];
+	                plane.modelMatrix = element.transform;
+	                plane.alignment = element.plane_alignment;
+	                plane.vertices = [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }));
 	              }
 	            }else{
 	              var anchor = this.anchors_.get(element.uuid);
 	              if(!anchor){
 	                this.anchors_.set(element.uuid, {
 	                  id: element.uuid,
-	                  transform: element.transform
+	                  modelMatrix: element.transform
 	                });
 	              }else{
-	                anchor.transform = element.transform;
+	                anchor.modelMatrix = element.transform;
 	              }
 	            }
 	          }
@@ -536,7 +546,7 @@
 				 planeIntersection: new THREE.Vector3(), //vec3.create(),
 				 planeIntersectionLocal: new THREE.Vector3(), //vec3.create(),
 				 planeHit: new THREE.Matrix4(), //mat4.create()
-				 //planeQuaternion: quat.create()
+				 planeQuaternion: new THREE.Quaternion()  // quat.create()
 			 };
 	 
 			 /**
@@ -636,13 +646,18 @@
 					 hitVars.planeMatrix.fromArray(plane.modelMatrix);
 	 
 					 // Get the position of the anchor in world-space.
-					 hitVars.planeCenter.set(0, 0, 0);
+					 hitVars.planeCenter.set(plane.center.x, plane.center.y, plane.center.z);
 					 hitVars.planePosition.copy(hitVars.planeCenter)
 						 .applyMatrix4(hitVars.planeMatrix)
+
+					 hitVars.planeAlignment = plane.alignment
 	 
 					 // Get the plane normal.
-					 // TODO: use alignment to determine this.
-					 hitVars.planeNormal.set(0, 1, 0);
+					 if (hitVars.planeAlignment === 0) {
+						 hitVars.planeNormal.set(0, 1, 0);
+	                 } else {
+						 hitVars.planeNormal.set(hitVars.planeMatrix[4], hitVars.planeMatrix[5], hitVars.planeMatrix[6]);
+	                 }
 	 
 					 // Check if the ray intersects the plane.
 					 var t = rayIntersectsPlane(
@@ -712,10 +727,8 @@
 					 ////////////////////////////////////////////////
 	 
 					 // The intersection is valid - create a matrix from hit position.
-					 hitVars.planeHit.makeTranslation(
-	                                   hitVars.planeIntersection.x,
-	                                   hitVars.planeIntersection.y,
-	                                   hitVars.planeIntersection.z);
+					 hitVars.planeQuaternion.setFromRotationMatrix(hitVars.planeMatrix);
+					 hitVars.planeHit.makeRotationFromQuaternion(hitVars.planeQuaternion).setPosition(hitVars.planeIntersection);
 					var hit = new VRHit();
 					 for (var j = 0; j < 16; j++) {
 						 hit.modelMatrix[j] = hitVars.planeHit.elements[j];
