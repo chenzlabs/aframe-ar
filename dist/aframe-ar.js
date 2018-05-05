@@ -229,6 +229,23 @@
 /* 2 */
 /***/ (function(module, exports) {
 
+	function convertVertices(vertices) {
+	    var verticesLength = vertices.length;
+	    var newVertices = new Float32Array(verticesLength * 3);
+	    var i = 0;
+	    var j = 0;
+	    var vertex;
+	    for (i = 0; i < verticesLength; i++) {
+	        vertex = vertices[i];
+	        newVertices[j] = vertex.x;
+	        newVertices[j + 1] = vertex.y;
+	        newVertices[j + 2] = vertex.z;
+	        j += 3;
+	    }
+	    return newVertices;
+	}
+
+
 	AFRAME.registerComponent('mozilla-xr-ar', {
 	    schema: {
 	        takeOverCamera: {default: true},
@@ -422,7 +439,7 @@
 	                extent: [element.plane_extent.x, element.plane_extent.z],
 	                modelMatrix: element.transform,
 	                alignment: element.plane_alignment,
-	                vertices: [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }))
+	                vertices: convertVertices(element.geometry.vertices)
 	              });
 	            }else{
 	              this.anchors_.set(element.uuid, {
@@ -456,14 +473,14 @@
 	                  extent: [element.plane_extent.x, element.plane_extent.z],
 	                  modelMatrix: element.transform,
 	                  alignment: element.plane_alignment,
-	                  vertices: [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }))
+	                  vertices: convertVertices(element.geometry.vertices)
 	                });
 	              } else {
 	                plane.center = element.plane_center;
 	                plane.extent = [element.plane_extent.x, element.plane_extent.z];
 	                plane.modelMatrix = element.transform;
 	                plane.alignment = element.plane_alignment;
-	                plane.vertices = [].concat.apply([], element.geometry.vertices.map(function (obj) { return [obj.x, obj.y, obj.z]; }));
+	                plane.vertices = convertVertices(element.geometry.vertices);
 	              }
 	            }else{
 	              var anchor = this.anchors_.get(element.uuid);
