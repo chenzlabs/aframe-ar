@@ -1,3 +1,5 @@
+/* global AFRAME, THREE, VRFrameData */
+
 AFRAME.registerComponent('three-ar', {
     schema: {
         takeOverCamera: {default: true},
@@ -136,7 +138,6 @@ AFRAME.registerComponent('three-ar', {
           
         // The desired function, which this returns.
         return function (x, y, el, raycasterEl) {
-            var threear = this;
             if (!this.arDisplay || !this.arDisplay.hitTest) { return []; }
 
             var hit = this.arDisplay.hitTest(x, y);

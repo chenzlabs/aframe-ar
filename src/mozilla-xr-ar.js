@@ -1,3 +1,5 @@
+/* global AFRAME, THREE */
+
 function convertVertices(vertices) {
     var verticesLength = vertices.length;
     var newVertices = new Float32Array(verticesLength * 3);
@@ -156,8 +158,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
     },
 
     handleFrame: function (data) {
-        var scene = this.el.sceneEl;
-
         // Decompose to get camera pose.
         this.poseMatrix.fromArray(data.camera_transform);
         this.poseMatrix.decompose(this.posePosition, this.poseQuaternion, this.poseRotation); // poseRotation is really scale, we redo below
@@ -193,6 +193,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
         var i;
+        var element;
 
         // WebXR Viewer returns geometry.vertices as an array of {x: number, y: number, y: number}
         // https://github.com/mozilla-mobile/webxr-ios/blob/c77b12c235e3960e2cd51538e086a38c83d8ec7c/XRViewer/ARKController/ARKController.m#L845
@@ -200,7 +201,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         if(data.newObjects && data.newObjects.length){
           for (i = 0; i < data.newObjects.length; i++) {
-            var element = data.newObjects[i];
+            element = data.newObjects[i];
             if(element.plane_center){
               this.planes_.set(element.uuid, {
                 id: element.uuid,
@@ -221,7 +222,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         if(data.removedObjects && data.removedObjects.length){
           for (i = 0; i < data.removedObjects.length; i++) {
-            var element = data.removedObjects[i];
+            element = data.removedObjects[i];
             if(this.planes_.get(element)){
               this.planes_.delete(element);
             }else{
@@ -232,7 +233,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         if(data.objects && data.objects.length){
           for (i = 0; i < data.objects.length; i++) {
-            var element = data.objects[i];
+            element = data.objects[i];
             if(element.plane_center){
               var plane = this.planes_.get(element.uuid);
               if(!plane){
@@ -391,7 +392,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 			 var hits = [];
 			 // If there are no anchors detected, there will be no hits.
 			 var planes = this.getPlanes();
-			 if (!planes || planes.length == 0) {
+			 if (!planes || planes.length === 0) {
 				 return hits;
 			 }
 
