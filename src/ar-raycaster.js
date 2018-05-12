@@ -1,3 +1,5 @@
+/* global AFRAME */
+
 // ar-raycaster modifies raycaster to append AR hit, if any.
 // But note that current AR hit API does not support orientation as input.
 AFRAME.registerComponent('ar-raycaster', {      
