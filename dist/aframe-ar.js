@@ -57,6 +57,8 @@
 /* 1 */
 /***/ (function(module, exports) {
 
+	/* global AFRAME, THREE, VRFrameData */
+
 	AFRAME.registerComponent('three-ar', {
 	    schema: {
 	        takeOverCamera: {default: true},
@@ -195,7 +197,6 @@
 	          
 	        // The desired function, which this returns.
 	        return function (x, y, el, raycasterEl) {
-	            var threear = this;
 	            if (!this.arDisplay || !this.arDisplay.hitTest) { return []; }
 
 	            var hit = this.arDisplay.hitTest(x, y);
@@ -203,7 +204,7 @@
 	            // Process AR hits.
 	            var hitsToReturn = [];
 	            for (var i = 0; hit && i < hit.length; i++) {
-	                transform.fromArray(hit[0].modelMatrix);
+	                transform.fromArray(hit[i].modelMatrix);
 	                transform.decompose(hitpoint, hitquat, hitscale);
 	                raycasterEl.object3D.getWorldPosition(worldpos);
 	                hitsToReturn.push({
@@ -228,6 +229,8 @@
 /***/ }),
 /* 2 */
 /***/ (function(module, exports) {
+
+	/* global AFRAME, THREE */
 
 	function convertVertices(vertices) {
 	    var verticesLength = vertices.length;
@@ -387,8 +390,6 @@
 	    },
 
 	    handleFrame: function (data) {
-	        var scene = this.el.sceneEl;
-
 	        // Decompose to get camera pose.
 	        this.poseMatrix.fromArray(data.camera_transform);
 	        this.poseMatrix.decompose(this.posePosition, this.poseQuaternion, this.poseRotation); // poseRotation is really scale, we redo below
@@ -424,6 +425,7 @@
 	        // From google-ar/WebARonARKit; also see webxr-polyfill/ARKitWrapper.js
 
 	        var i;
+	        var element;
 
 	        // WebXR Viewer returns geometry.vertices as an array of {x: number, y: number, y: number}
 	        // https://github.com/mozilla-mobile/webxr-ios/blob/c77b12c235e3960e2cd51538e086a38c83d8ec7c/XRViewer/ARKController/ARKController.m#L845
@@ -431,7 +433,7 @@
 
 	        if(data.newObjects && data.newObjects.length){
 	          for (i = 0; i < data.newObjects.length; i++) {
-	            var element = data.newObjects[i];
+	            element = data.newObjects[i];
 	            if(element.plane_center){
 	              this.planes_.set(element.uuid, {
 	                id: element.uuid,
@@ -452,7 +454,7 @@
 
 	        if(data.removedObjects && data.removedObjects.length){
 	          for (i = 0; i < data.removedObjects.length; i++) {
-	            var element = data.removedObjects[i];
+	            element = data.removedObjects[i];
 	            if(this.planes_.get(element)){
 	              this.planes_.delete(element);
 	            }else{
@@ -463,7 +465,7 @@
 
 	        if(data.objects && data.objects.length){
 	          for (i = 0; i < data.objects.length; i++) {
-	            var element = data.objects[i];
+	            element = data.objects[i];
 	            if(element.plane_center){
 	              var plane = this.planes_.get(element.uuid);
 	              if(!plane){
@@ -622,7 +624,7 @@
 				 var hits = [];
 				 // If there are no anchors detected, there will be no hits.
 				 var planes = this.getPlanes();
-				 if (!planes || planes.length == 0) {
+				 if (!planes || planes.length === 0) {
 					 return hits;
 				 }
 
@@ -778,7 +780,7 @@
 	            // Process AR hits.
 	            var hitsToReturn = [];
 	            for (var i = 0; hit && i < hit.length; i++) {
-	                transform.fromArray(hit[0].modelMatrix);
+	                transform.fromArray(hit[i].modelMatrix);
 	                transform.decompose(hitpoint, hitquat, hitscale);
 	                raycasterEl.object3D.getWorldPosition(worldpos);
 
@@ -804,6 +806,8 @@
 /***/ }),
 /* 3 */
 /***/ (function(module, exports) {
+
+	/* global AFRAME, THREE */
 
 	AFRAME.registerComponent('ar-planes', {
 
@@ -843,14 +847,10 @@
 
 	  tick: (function (t, dt) {
 	    // Create the temporary variables we will reuse, if needed.
-	    var tempAlignment = 0;
 	    var tempScale = new THREE.Vector3(1, 1, 1);
-	    var tempExtent3 = new THREE.Vector3();
 	    var tempMat4 = new THREE.Matrix4();
 	    var tempPosition = new THREE.Vector3();
-	    var tempRotation = new THREE.Vector3();
 	    var tempQuaternion = new THREE.Quaternion();
-	    var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
 	    // The actual function, which we return.
 	    return function (t, dt) {
@@ -909,7 +909,7 @@
 
 	        // If we're still here, we need to finish building the plane spec.
 
-	        var planespec = {identifier: id};
+	        planespec = {identifier: id};
 	        if (timestamp !== undefined) { planespec.timestamp = timestamp; }
 
 		// New API plane spec uses modelMatrix (same as transform).
@@ -1031,6 +1031,8 @@
 /* 4 */
 /***/ (function(module, exports) {
 
+	/* global AFRAME */
+
 	AFRAME.registerComponent('ar', {
 	  schema: {
 	    takeOverCamera: {default: true},
@@ -1064,13 +1066,16 @@
 /* 5 */
 /***/ (function(module, exports) {
 
+	/* global AFRAME */
+
 	AFRAME.registerComponent('ar-camera', {
 	  schema: {
 	    enabled: {default:true}
 	  },
 
 	  init: function () {
-	    this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
+	    var lookControls = this.el.getAttribute('look-controls');
+	    this.wasLookControlsEnabled = lookControls ? lookControls.enabled : false;
 	  },
 
 	  update: function (oldData) {
@@ -1078,12 +1083,16 @@
 	      // Value changed, so react accordingly.
 	      if (this.data.enabled) {
 	        // Save camera look-controls enabled, and turn off for AR.
-	        this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
-	        this.el.setAttribute('look-controls', 'enabled', false);
+	        var lookControls = this.el.getAttribute('look-controls');
+	        this.wasLookControlsEnabled = lookControls ? lookControls.enabled : false;
+	        if (this.wasLookControlsEnabled) {
+	          this.el.setAttribute('look-controls', 'enabled', false);
+	        }
 	      } else {
 	        // Restore camera look-controls enabled.
-	        this.el.setAttribute('look-controls', 'enabled',
-	          this.wasLookControlsEnabled === true);
+	        if (this.wasLookControlsEnabled) {
+	          this.el.setAttribute('look-controls', 'enabled', true);
+	        }
 	      }
 	    }
 	  },
@@ -1125,6 +1134,8 @@
 /***/ }),
 /* 6 */
 /***/ (function(module, exports) {
+
+	/* global AFRAME */
 
 	// ar-raycaster modifies raycaster to append AR hit, if any.
 	// But note that current AR hit API does not support orientation as input.
