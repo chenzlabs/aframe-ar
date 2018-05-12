@@ -4,7 +4,8 @@ AFRAME.registerComponent('ar-camera', {
   },
 
   init: function () {
-    this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
+    var lookControls = this.el.getAttribute('look-controls');
+    this.wasLookControlsEnabled = lookControls ? lookControls.enabled : false;
   },
 
   update: function (oldData) {
@@ -12,12 +13,16 @@ AFRAME.registerComponent('ar-camera', {
       // Value changed, so react accordingly.
       if (this.data.enabled) {
         // Save camera look-controls enabled, and turn off for AR.
-        this.wasLookControlsEnabled = this.el.getAttribute('look-controls', 'enabled');
-        this.el.setAttribute('look-controls', 'enabled', false);
+        var lookControls = this.el.getAttribute('look-controls');
+        this.wasLookControlsEnabled = lookControls ? lookControls.enabled : false;
+        if (this.wasLookControlsEnabled) {
+          this.el.setAttribute('look-controls', 'enabled', false);
+        }
       } else {
         // Restore camera look-controls enabled.
-        this.el.setAttribute('look-controls', 'enabled',
-          this.wasLookControlsEnabled === true);
+        if (this.wasLookControlsEnabled) {
+          this.el.setAttribute('look-controls', 'enabled', true);
+        }
       }
     }
   },
