@@ -1,3 +1,5 @@
+/* global AFRAME, THREE */
+
 AFRAME.registerComponent('ar-planes', {
 
   getPlaneSource: function () {
@@ -36,14 +38,10 @@ AFRAME.registerComponent('ar-planes', {
 
   tick: (function (t, dt) {
     // Create the temporary variables we will reuse, if needed.
-    var tempAlignment = 0;
     var tempScale = new THREE.Vector3(1, 1, 1);
-    var tempExtent3 = new THREE.Vector3();
     var tempMat4 = new THREE.Matrix4();
     var tempPosition = new THREE.Vector3();
-    var tempRotation = new THREE.Vector3();
     var tempQuaternion = new THREE.Quaternion();
-    var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
     // The actual function, which we return.
     return function (t, dt) {
@@ -102,7 +100,7 @@ AFRAME.registerComponent('ar-planes', {
 
         // If we're still here, we need to finish building the plane spec.
 
-        var planespec = {identifier: id};
+        planespec = {identifier: id};
         if (timestamp !== undefined) { planespec.timestamp = timestamp; }
 
 	// New API plane spec uses modelMatrix (same as transform).

@@ -1,3 +1,5 @@
+/* global AFRAME */
+
 AFRAME.registerComponent('ar-camera', {
   schema: {
     enabled: {default:true}

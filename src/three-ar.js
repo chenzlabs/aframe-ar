@@ -145,7 +145,7 @@ AFRAME.registerComponent('three-ar', {
             // Process AR hits.
             var hitsToReturn = [];
             for (var i = 0; hit && i < hit.length; i++) {
-                transform.fromArray(hit[0].modelMatrix);
+                transform.fromArray(hit[i].modelMatrix);
                 transform.decompose(hitpoint, hitquat, hitscale);
                 raycasterEl.object3D.getWorldPosition(worldpos);
                 hitsToReturn.push({
