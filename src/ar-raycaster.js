@@ -28,10 +28,11 @@ AFRAME.registerComponent('ar-raycaster', {
     }
   },
         
-  intersectObjects: function (objects, recursive) {
-    var results = this.raycasterIntersectObjects(objects, recursive);
+  intersectObjects: function (objects, recursive, rawIntersections) {
+    // it appears that intersectObjects is now returning in rawIntersections
+    this.raycasterIntersectObjects(objects, recursive, rawIntersections);
     // Tack on AR hit result, if any.
-    return results.concat(this.hitAR());
+    rawIntersections = rawIntersections.concat(this.hitAR());
   },        
         
   hitAR: function () {
