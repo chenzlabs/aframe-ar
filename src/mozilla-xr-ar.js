@@ -17,10 +17,74 @@ function convertVertices(vertices) {
 }
 
 
+function encode(buffer) {
+var base64    = ''
+var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+var bytes      = buffer;  // assume it's a typedArrayBuffer 
+		
+if (buffer instanceof ArrayBuffer) {
+bytes = new Uint8Array(arrayBuffer)
+} else if (buffer instanceof ImageData) {
+bytes = buffer.data
+}
+
+var byteLength    = buffer.length
+var byteRemainder = byteLength % 3
+var mainLength    = byteLength - byteRemainder
+
+var a, b, c, d
+var chunk
+
+// Main loop deals with bytes in chunks of 3
+for (var i = 0; i < mainLength; i = i + 3) {
+// Combine the three bytes into a single integer
+chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2]
+
+// Use bitmasks to extract 6-bit segments from the triplet
+a = (chunk & 16515072) >> 18 // 16515072 = (2^6 - 1) << 18
+b = (chunk & 258048)   >> 12 // 258048   = (2^6 - 1) << 12
+c = (chunk & 4032)     >>  6 // 4032     = (2^6 - 1) << 6
+d = chunk & 63               // 63       = 2^6 - 1
+
+// Convert the raw binary segments to the appropriate ASCII encoding
+base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d]
+}
+
+// Deal with the remaining bytes and padding
+if (byteRemainder == 1) {
+chunk = bytes[mainLength]
+
+a = (chunk & 252) >> 2 // 252 = (2^6 - 1) << 2
+
+// Set the 4 least significant bits to zero
+b = (chunk & 3)   << 4 // 3   = 2^2 - 1
+
+base64 += encodings[a] + encodings[b] + '=='
+} else if (byteRemainder == 2) {
+chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1]
+
+a = (chunk & 64512) >> 10 // 64512 = (2^6 - 1) << 10
+b = (chunk & 1008)  >>  4 // 1008  = (2^6 - 1) << 4
+
+// Set the 2 least significant bits to zero
+c = (chunk & 15)    <<  2 // 15    = 2^4 - 1
+
+base64 += encodings[a] + encodings[b] + encodings[c] + '='
+}
+
+return base64
+}
+
+
+
+
+
 AFRAME.registerComponent('mozilla-xr-ar', {
     schema: {
         takeOverCamera: {default: true},
-        cameraUserHeight: {default: false}
+        cameraUserHeight: {default: false},
+        worldSensing: {default: false}
     },
 
     init: function () {
@@ -97,6 +161,24 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             callback: 'arkitCallback0' // this.onInit as window callback
         };
 
+        // Need these because WebXR Viewer...
+        window['setNativeTime'] = function (data) {
+          //console.log('setNativeTime:', data);
+          window.nativeTime = data.nativeTime;
+        };
+        ['arTrackingChanged',
+         'userGrantedWorldSensingData', // Needed for world sensing.
+         'arkitDidMoveBackground',
+         'arkitStartRecording',
+         'arkitStopRecording',
+         'arkitInterruptionEnded',
+         'arkitShowDebug',
+         'onError'].forEach(function (eventName) {
+          window[eventName] = function (data) {
+            console.log(eventName + ':', data);
+          };
+        });
+
         // Call initAR.
         window.webkit.messageHandlers.initAR.postMessage(data);
     },
@@ -115,7 +197,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 	        location: true,
                 camera: true,
                 objects: true,
-                light_intensity: true
+                light_intensity: true,
+                worldSensing: this.data.worldSensing
             },
             callback: 'arkitCallback1' // this.onWatch as window callback
         };
@@ -212,10 +295,14 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                 vertices: convertVertices(element.geometry.vertices)
               });
             }else{
-              this.anchors_.set(element.uuid, {
+              var anchorData = {
                 id: element.uuid,
                 modelMatrix: element.transform
-              });
+              };
+              if (element.type === 'image') {
+                anchorData.name = element.uuid;
+              }
+              this.anchors_.set(element.uuid, anchorData);
             }
           }
         }
@@ -285,6 +372,131 @@ AFRAME.registerComponent('mozilla-xr-ar', {
     getProjectionMatrix: function () {
         if (!this.arDisplay) { return null; }
         return this.projectionMatrix;
+    },
+
+    // Link to new ARKit image marker and anchor support.
+
+    addImage: function (name, url, physicalWidth) {
+        if (!this.arDisplay) { return null; }
+/*
+NSDictionary *imageAnchorInfoDictionary = [message body];
+NSString *createDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
+// callback
+
+CGFloat physicalWidth = [referenceImageDictionary[@"physicalWidth"] doubleValue];
+NSString* b64String = referenceImageDictionary[@"buffer"];
+size_t width = (size_t) [referenceImageDictionary[@"imageWidth"] intValue];
+size_t height = (size_t) [referenceImageDictionary[@"imageHeight"] intValue];
+...
+result.name = referenceImageDictionary[@"uid"];
+*/
+        // NOTE: looks like WebXR Viewer won't load from URL,
+        //       so we need to convert from img element
+        var aCanvas = document.createElement('canvas');
+        var aContext = aCanvas.getContext('2d');
+        var aImg; 
+          // Don't use element; there is some chance of changed width/height.
+          // = document.querySelector('img[src="' + url + '"]');
+        if (!aImg) {
+          aImg = document.createElement('img');
+          aImg.crossOrigin = 'anonymous';
+          aImg.src = url;
+          document.body.appendChild(aImg);
+        }
+
+        // The image needs to be loaded...
+        if (!aImg.complete || !aImg.naturalHeight) {
+          console.log('!!! addImage: !aImg.complete || !aImg.naturalHeight, aborting');
+          return;
+        } 
+       
+        // The image needs to be have nonzero size...
+        if (!aImg.width || !aImg.height) {
+          console.log('!!! addImage: !aImg.width || !aImg.height, aborting');
+          return;
+        } 
+
+        aCanvas.width = aImg.width;
+        aCanvas.height = aImg.height;
+        aContext.drawImage(aImg, 0, 0);
+        var aImageData = aContext.getImageData(0, 0, aImg.width, aImg.height);
+        var b64ImageData = encode(aImageData.data);
+        if (!b64ImageData) {
+          console.log('!!! addImage: !b64ImageData, aborting');
+          return;
+        }
+
+        // NOTE: also, WebXR Viewer doesn't pass back which image/name,
+        //       so we need a per-image/name callback
+        window.callbackForCreateImageAnchorCounter = (window.callbackForCreateImageAnchorCounter || 0) + 1;
+        var callbackName = 'callbackForCreateImageAnchor_' + window.callbackForCreateImageAnchorCounter;
+        var imageName = name;
+        console.log('creating ', callbackName, ' for ', imageName);
+        window[callbackName] = function (data) {
+          console.log(callbackName);
+          console.log(data);
+          //var name = callbackName.substring(29);
+          if (data.created !== undefined) {
+            if (!data.created) {
+              // we failed to create the image, for whatever reason.
+              console.log('addImage: !created; ', data.error);
+              delete window[callbackName];
+            } else {
+              console.log('addImage: created, activating ', imageName);
+              window.webkit.messageHandlers.activateDetectionImage.postMessage({
+                callback: callbackName,
+                uid: imageName
+              });
+            }
+          } else
+          if (data.activated !== undefined) {
+            if (!data.activated) {
+              // we failed to activate the image, for whatever reason.
+              console.log('addImage: !activated; ', data.error);
+            } else {
+              console.log('addImage: activated ', imageName);
+            }
+            delete window[callbackName];
+          }
+        };
+
+        window.webkit.messageHandlers.createImageAnchor.postMessage({
+          callback: callbackName,
+          uid: name,
+          buffer: b64ImageData,
+          imageWidth: aImg.width,
+          imageHeight: aImg.height,
+          physicalWidth: physicalWidth // in meters
+        });
+    },
+
+    removeImage: function (name) {
+        if (!this.arDisplay) { return null; }
+        // TODO: fix the data
+/*
+NSDictionary *imageAnchorInfoDictionary = [message body];
+NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
+// detectionImageName
+NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
+// callback
+*/
+        window.webkit.messageHandlers.deactivateDetectionImage.postMessage({
+          //callback: ???, // TODO
+          detectionImageName: name
+        });
+        // TODO: wire up completion to destroy (and fix the data)
+/*
+NSDictionary *imageAnchorInfoDictionary = [message body];
+NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
+// detectionImageName
+NSString *destroyDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
+// callback
+*/
+        //window.webkit.messageHandlers.destroyDetectionImage.postMessage(data);
+    },
+
+    getAnchors: function () {
+        return Array.from(this.anchors_.values());
     },
 
     // Use planes to do synchronous hit test.
