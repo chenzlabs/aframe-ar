@@ -101,10 +101,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
         if (this.el.sceneEl.hasLoaded) {
-            console.log('mozilla-xr-ar: hasLoaded, setTimeout');
             setTimeout(this.onceSceneLoaded);
         } else {
-            console.log('mozilla-xr-ar: !hasLoaded, addEventListener');
             this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
         }
 
@@ -163,7 +161,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         // Need these because WebXR Viewer...
         window['setNativeTime'] = function (data) {
-          //console.log('setNativeTime:', data);
           window.nativeTime = data.nativeTime;
         };
         ['arTrackingChanged',
@@ -429,10 +426,10 @@ result.name = referenceImageDictionary[@"uid"];
         window.callbackForCreateImageAnchorCounter = (window.callbackForCreateImageAnchorCounter || 0) + 1;
         var callbackName = 'callbackForCreateImageAnchor_' + window.callbackForCreateImageAnchorCounter;
         var imageName = name;
-        console.log('creating ', callbackName, ' for ', imageName);
+        //console.log('creating ', callbackName, ' for ', imageName);
         window[callbackName] = function (data) {
-          console.log(callbackName);
-          console.log(data);
+          //console.log(callbackName);
+          //console.log(data);
           //var name = callbackName.substring(29);
           if (data.created !== undefined) {
             if (!data.created) {
@@ -440,7 +437,7 @@ result.name = referenceImageDictionary[@"uid"];
               console.log('addImage: !created; ', data.error);
               delete window[callbackName];
             } else {
-              console.log('addImage: created, activating ', imageName);
+              //console.log('addImage: created, activating ', imageName);
               window.webkit.messageHandlers.activateDetectionImage.postMessage({
                 callback: callbackName,
                 uid: imageName
@@ -452,7 +449,7 @@ result.name = referenceImageDictionary[@"uid"];
               // we failed to activate the image, for whatever reason.
               console.log('addImage: !activated; ', data.error);
             } else {
-              console.log('addImage: activated ', imageName);
+              //console.log('addImage: activated ', imageName);
             }
             delete window[callbackName];
           }
@@ -480,17 +477,17 @@ NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR
         window.callbackForRemoveImageAnchorCounter = (window.callbackForRemoveImageAnchorCounter || 0) + 1;
         var callbackName = 'callbackForRemoveImageAnchor_' + window.callbackForRemoveImageAnchorCounter;
         var imageName = name;
-        console.log('creating ', callbackName, ' for ', imageName);
+        //console.log('creating ', callbackName, ' for ', imageName);
         window[callbackName] = function (data) {
-          console.log(callbackName);
-          console.log(data);
+          //console.log(callbackName);
+          //console.log(data);
 
           if (data.deactivated !== undefined) {
             if (!data.deactivated) {
               console.log('!!! ' + callbackName + ': !deactivated', data.error);
               delete window[callbackName];
             } else {
-              console.log(callbackName + ': deactivated, destroying', imageName);
+              //console.log(callbackName + ': deactivated, destroying', imageName);
             }
             window.webkit.messageHandlers.destroyDetectionImage.postMessage({
               callback: callbackName,
@@ -501,7 +498,7 @@ NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR
             if (!data.destroyed) {
               console.log('!!! ' + callbackName + ': !destroyed, ', data.error);
             } else {
-              console.log(callbackName + ': destroyed', imageName);
+              //console.log(callbackName + ': destroyed', imageName);
             }
             delete window[callbackName];
           }
