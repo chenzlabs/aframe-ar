@@ -3,7 +3,8 @@
 AFRAME.registerComponent('three-ar', {
     schema: {
         takeOverCamera: {default: true},
-        cameraUserHeight: {default: false}
+        cameraUserHeight: {default: false},
+        worldSensing: {default: false} // currently unused
     },
 
     init: function () {
