@@ -8,17 +8,33 @@ AFRAME.registerComponent('ar', {
     hideUI: {default: true}
   },
   dependencies: ['three-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
-  getPlanes: function () {
-    if (!this.planeSource) {
-      this.planeSource = this.el.components['ar-planes'];
+  getSource: function () {
+    var whichar;
+    if (!this.source) {
+      whichar = this.el.sceneEl.components['three-ar'];
+      if (whichar && whichar.arDisplay) {
+        this.source = whichar.arDisplay;
+      }
     }
-    return this.planeSource ? this.planeSource.getPlanes() : undefined;
+    if (!this.source) {
+      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+      if (whichar && whichar.arDisplay) {
+        this.source = whichar;
+      }
+    }
+    return this.source;
+  },
+  getPlanes: function () {
+    return this.source ? this.source.getPlanes() : undefined;
   },
   getAnchors: function () {
-    if (!this.anchorSource) {
-      this.anchorSource = this.el.components['ar-anchors'];
-    }
-    return this.anchorSource ? this.anchorSource.getAnchors() : undefined;
+    return this.source ? this.source.getAnchors() : undefined;
+  },
+  addImage: function (name, url, physicalWidth) {
+    return this.source.addImage(name, url, physicalWidth);
+  },
+  removeImage: function (name) {
+    return this.source.removeImage(name);
   },
   init: function () {
     var options = {

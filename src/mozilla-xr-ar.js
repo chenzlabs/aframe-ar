@@ -394,9 +394,7 @@ result.name = referenceImageDictionary[@"uid"];
         //       so we need to convert from img element
         var aCanvas = document.createElement('canvas');
         var aContext = aCanvas.getContext('2d');
-        var aImg; 
-          // Don't use element; there is some chance of changed width/height.
-          // = document.querySelector('img[src="' + url + '"]');
+        var aImg; // Don't use element; chance of changed width/height.
         if (!aImg) {
           aImg = document.createElement('img');
           aImg.crossOrigin = 'anonymous';
@@ -472,7 +470,6 @@ result.name = referenceImageDictionary[@"uid"];
 
     removeImage: function (name) {
         if (!this.arDisplay) { return null; }
-        // TODO: fix the data
 /*
 NSDictionary *imageAnchorInfoDictionary = [message body];
 NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
@@ -480,19 +477,40 @@ NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTI
 NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
 // callback
 */
+        window.callbackForRemoveImageAnchorCounter = (window.callbackForRemoveImageAnchorCounter || 0) + 1;
+        var callbackName = 'callbackForRemoveImageAnchor_' + window.callbackForRemoveImageAnchorCounter;
+        var imageName = name;
+        console.log('creating ', callbackName, ' for ', imageName);
+        window[callbackName] = function (data) {
+          console.log(callbackName);
+          console.log(data);
+
+          if (data.deactivated !== undefined) {
+            if (!data.deactivated) {
+              console.log('!!! ' + callbackName + ': !deactivated', data.error);
+              delete window[callbackName];
+            } else {
+              console.log(callbackName + ': deactivated, destroying', imageName);
+            }
+            window.webkit.messageHandlers.destroyDetectionImage.postMessage({
+              callback: callbackName,
+              uid: imageName
+            });
+          }
+          if (data.destroyed !== undefined) {
+            if (!data.destroyed) {
+              console.log('!!! ' + callbackName + ': !destroyed, ', data.error);
+            } else {
+              console.log(callbackName + ': destroyed', imageName);
+            }
+            delete window[callbackName];
+          }
+        };
+
         window.webkit.messageHandlers.deactivateDetectionImage.postMessage({
-          //callback: ???, // TODO
-          detectionImageName: name
+          callback: callbackName,
+          uid: imageName
         });
-        // TODO: wire up completion to destroy (and fix the data)
-/*
-NSDictionary *imageAnchorInfoDictionary = [message body];
-NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
-// detectionImageName
-NSString *destroyDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
-// callback
-*/
-        //window.webkit.messageHandlers.destroyDetectionImage.postMessage(data);
     },
 
     getAnchors: function () {
