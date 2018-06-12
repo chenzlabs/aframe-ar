@@ -50,6 +50,8 @@
 	__webpack_require__(4);
 	__webpack_require__(5);
 	__webpack_require__(6);
+	__webpack_require__(7);
+	__webpack_require__(8);
 
 
 
@@ -62,7 +64,8 @@
 	AFRAME.registerComponent('three-ar', {
 	    schema: {
 	        takeOverCamera: {default: true},
-	        cameraUserHeight: {default: false}
+	        cameraUserHeight: {default: false},
+	        worldSensing: {default: false} // currently unused
 	    },
 
 	    init: function () {
@@ -249,10 +252,74 @@
 	}
 
 
+	function encode(buffer) {
+	var base64    = ''
+	var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+	var bytes      = buffer;  // assume it's a typedArrayBuffer 
+			
+	if (buffer instanceof ArrayBuffer) {
+	bytes = new Uint8Array(arrayBuffer)
+	} else if (buffer instanceof ImageData) {
+	bytes = buffer.data
+	}
+
+	var byteLength    = buffer.length
+	var byteRemainder = byteLength % 3
+	var mainLength    = byteLength - byteRemainder
+
+	var a, b, c, d
+	var chunk
+
+	// Main loop deals with bytes in chunks of 3
+	for (var i = 0; i < mainLength; i = i + 3) {
+	// Combine the three bytes into a single integer
+	chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2]
+
+	// Use bitmasks to extract 6-bit segments from the triplet
+	a = (chunk & 16515072) >> 18 // 16515072 = (2^6 - 1) << 18
+	b = (chunk & 258048)   >> 12 // 258048   = (2^6 - 1) << 12
+	c = (chunk & 4032)     >>  6 // 4032     = (2^6 - 1) << 6
+	d = chunk & 63               // 63       = 2^6 - 1
+
+	// Convert the raw binary segments to the appropriate ASCII encoding
+	base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d]
+	}
+
+	// Deal with the remaining bytes and padding
+	if (byteRemainder == 1) {
+	chunk = bytes[mainLength]
+
+	a = (chunk & 252) >> 2 // 252 = (2^6 - 1) << 2
+
+	// Set the 4 least significant bits to zero
+	b = (chunk & 3)   << 4 // 3   = 2^2 - 1
+
+	base64 += encodings[a] + encodings[b] + '=='
+	} else if (byteRemainder == 2) {
+	chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1]
+
+	a = (chunk & 64512) >> 10 // 64512 = (2^6 - 1) << 10
+	b = (chunk & 1008)  >>  4 // 1008  = (2^6 - 1) << 4
+
+	// Set the 2 least significant bits to zero
+	c = (chunk & 15)    <<  2 // 15    = 2^4 - 1
+
+	base64 += encodings[a] + encodings[b] + encodings[c] + '='
+	}
+
+	return base64
+	}
+
+
+
+
+
 	AFRAME.registerComponent('mozilla-xr-ar', {
 	    schema: {
 	        takeOverCamera: {default: true},
-	        cameraUserHeight: {default: false}
+	        cameraUserHeight: {default: false},
+	        worldSensing: {default: false}
 	    },
 
 	    init: function () {
@@ -269,10 +336,8 @@
 
 	        this.onceSceneLoaded = this.onceSceneLoaded.bind(this);
 	        if (this.el.sceneEl.hasLoaded) {
-	            console.log('mozilla-xr-ar: hasLoaded, setTimeout');
 	            setTimeout(this.onceSceneLoaded);
 	        } else {
-	            console.log('mozilla-xr-ar: !hasLoaded, addEventListener');
 	            this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
 	        }
 
@@ -329,6 +394,23 @@
 	            callback: 'arkitCallback0' // this.onInit as window callback
 	        };
 
+	        // Need these because WebXR Viewer...
+	        window['setNativeTime'] = function (data) {
+	          window.nativeTime = data.nativeTime;
+	        };
+	        ['arTrackingChanged',
+	         'userGrantedWorldSensingData', // Needed for world sensing.
+	         'arkitDidMoveBackground',
+	         'arkitStartRecording',
+	         'arkitStopRecording',
+	         'arkitInterruptionEnded',
+	         'arkitShowDebug',
+	         'onError'].forEach(function (eventName) {
+	          window[eventName] = function (data) {
+	            console.log(eventName + ':', data);
+	          };
+	        });
+
 	        // Call initAR.
 	        window.webkit.messageHandlers.initAR.postMessage(data);
 	    },
@@ -347,7 +429,8 @@
 		        location: true,
 	                camera: true,
 	                objects: true,
-	                light_intensity: true
+	                light_intensity: true,
+	                worldSensing: this.data.worldSensing
 	            },
 	            callback: 'arkitCallback1' // this.onWatch as window callback
 	        };
@@ -444,10 +527,14 @@
 	                vertices: convertVertices(element.geometry.vertices)
 	              });
 	            }else{
-	              this.anchors_.set(element.uuid, {
+	              var anchorData = {
 	                id: element.uuid,
 	                modelMatrix: element.transform
-	              });
+	              };
+	              if (element.type === 'image') {
+	                anchorData.name = element.uuid;
+	              }
+	              this.anchors_.set(element.uuid, anchorData);
 	            }
 	          }
 	        }
@@ -517,6 +604,149 @@
 	    getProjectionMatrix: function () {
 	        if (!this.arDisplay) { return null; }
 	        return this.projectionMatrix;
+	    },
+
+	    // Link to new ARKit image marker and anchor support.
+
+	    addImage: function (name, url, physicalWidth) {
+	        if (!this.arDisplay) { return null; }
+	/*
+	NSDictionary *imageAnchorInfoDictionary = [message body];
+	NSString *createDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
+	// callback
+
+	CGFloat physicalWidth = [referenceImageDictionary[@"physicalWidth"] doubleValue];
+	NSString* b64String = referenceImageDictionary[@"buffer"];
+	size_t width = (size_t) [referenceImageDictionary[@"imageWidth"] intValue];
+	size_t height = (size_t) [referenceImageDictionary[@"imageHeight"] intValue];
+	...
+	result.name = referenceImageDictionary[@"uid"];
+	*/
+	        // NOTE: looks like WebXR Viewer won't load from URL,
+	        //       so we need to convert from img element
+	        var aCanvas = document.createElement('canvas');
+	        var aContext = aCanvas.getContext('2d');
+	        var aImg; // Don't use element; chance of changed width/height.
+	        if (!aImg) {
+	          aImg = document.createElement('img');
+	          aImg.crossOrigin = 'anonymous';
+	          aImg.src = url;
+	          document.body.appendChild(aImg);
+	        }
+
+	        // The image needs to be loaded...
+	        if (!aImg.complete || !aImg.naturalHeight) {
+	          console.log('!!! addImage: !aImg.complete || !aImg.naturalHeight, aborting');
+	          return;
+	        } 
+	       
+	        // The image needs to be have nonzero size...
+	        if (!aImg.width || !aImg.height) {
+	          console.log('!!! addImage: !aImg.width || !aImg.height, aborting');
+	          return;
+	        } 
+
+	        aCanvas.width = aImg.width;
+	        aCanvas.height = aImg.height;
+	        aContext.drawImage(aImg, 0, 0);
+	        var aImageData = aContext.getImageData(0, 0, aImg.width, aImg.height);
+	        var b64ImageData = encode(aImageData.data);
+	        if (!b64ImageData) {
+	          console.log('!!! addImage: !b64ImageData, aborting');
+	          return;
+	        }
+
+	        // NOTE: also, WebXR Viewer doesn't pass back which image/name,
+	        //       so we need a per-image/name callback
+	        window.callbackForCreateImageAnchorCounter = (window.callbackForCreateImageAnchorCounter || 0) + 1;
+	        var callbackName = 'callbackForCreateImageAnchor_' + window.callbackForCreateImageAnchorCounter;
+	        var imageName = name;
+	        //console.log('creating ', callbackName, ' for ', imageName);
+	        window[callbackName] = function (data) {
+	          //console.log(callbackName);
+	          //console.log(data);
+	          //var name = callbackName.substring(29);
+	          if (data.created !== undefined) {
+	            if (!data.created) {
+	              // we failed to create the image, for whatever reason.
+	              console.log('addImage: !created; ', data.error);
+	              delete window[callbackName];
+	            } else {
+	              //console.log('addImage: created, activating ', imageName);
+	              window.webkit.messageHandlers.activateDetectionImage.postMessage({
+	                callback: callbackName,
+	                uid: imageName
+	              });
+	            }
+	          } else
+	          if (data.activated !== undefined) {
+	            if (!data.activated) {
+	              // we failed to activate the image, for whatever reason.
+	              console.log('addImage: !activated; ', data.error);
+	            } else {
+	              //console.log('addImage: activated ', imageName);
+	            }
+	            delete window[callbackName];
+	          }
+	        };
+
+	        window.webkit.messageHandlers.createImageAnchor.postMessage({
+	          callback: callbackName,
+	          uid: name,
+	          buffer: b64ImageData,
+	          imageWidth: aImg.width,
+	          imageHeight: aImg.height,
+	          physicalWidth: physicalWidth // in meters
+	        });
+	    },
+
+	    removeImage: function (name) {
+	        if (!this.arDisplay) { return null; }
+	/*
+	NSDictionary *imageAnchorInfoDictionary = [message body];
+	NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
+	// detectionImageName
+	NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
+	// callback
+	*/
+	        window.callbackForRemoveImageAnchorCounter = (window.callbackForRemoveImageAnchorCounter || 0) + 1;
+	        var callbackName = 'callbackForRemoveImageAnchor_' + window.callbackForRemoveImageAnchorCounter;
+	        var imageName = name;
+	        //console.log('creating ', callbackName, ' for ', imageName);
+	        window[callbackName] = function (data) {
+	          //console.log(callbackName);
+	          //console.log(data);
+
+	          if (data.deactivated !== undefined) {
+	            if (!data.deactivated) {
+	              console.log('!!! ' + callbackName + ': !deactivated', data.error);
+	              delete window[callbackName];
+	            } else {
+	              //console.log(callbackName + ': deactivated, destroying', imageName);
+	            }
+	            window.webkit.messageHandlers.destroyDetectionImage.postMessage({
+	              callback: callbackName,
+	              uid: imageName
+	            });
+	          }
+	          if (data.destroyed !== undefined) {
+	            if (!data.destroyed) {
+	              console.log('!!! ' + callbackName + ': !destroyed, ', data.error);
+	            } else {
+	              //console.log(callbackName + ': destroyed', imageName);
+	            }
+	            delete window[callbackName];
+	          }
+	        };
+
+	        window.webkit.messageHandlers.deactivateDetectionImage.postMessage({
+	          callback: callbackName,
+	          uid: imageName
+	        });
+	    },
+
+	    getAnchors: function () {
+	        return Array.from(this.anchors_.values());
 	    },
 
 	    // Use planes to do synchronous hit test.
@@ -1031,25 +1261,126 @@
 /* 4 */
 /***/ (function(module, exports) {
 
+	/* global AFRAME, THREE */
+
+	AFRAME.registerComponent('ar-anchors', {
+
+	  getSource: function () {
+	    var whichar;
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['three-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar.arDisplay;
+	      }
+	    }
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar;
+	      }
+	    }
+	    return this.source;
+	  },
+
+	  getAnchors: function () {
+	    var source = this.getSource();
+	    if (!source || !source.getAnchors) return undefined;
+	    return source.getAnchors();
+	  }
+	});
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+	/* global AFRAME, THREE */
+
+	AFRAME.registerComponent('ar-images', {
+
+	  getSource: function () {
+	    var whichar;
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['three-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar.arDisplay;
+	      }
+	    }
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar;
+	      }
+	    }
+	    return this.source;
+	  },
+
+	  addImage: function (name, url, physicalWidth) {
+	    var source = this.getSource();
+	    if (!source || !source.addImage) return undefined;
+	    return source.addImage(name, url, physicalWidth);
+	  },
+
+	  removeImage: function (name) {
+	    var source = this.getSource();
+	    if (!source || !source.removeImage) return undefined;
+	    return source.removeImage(name);
+	  },
+
+	});
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
 	/* global AFRAME */
 
 	AFRAME.registerComponent('ar', {
 	  schema: {
 	    takeOverCamera: {default: true},
 	    cameraUserHeight: {default: false},
+	    worldSensing: {default: false},
 	    hideUI: {default: true}
 	  },
-	  dependencies: ['three-ar', 'mozilla-xr-ar', 'ar-planes'],
+	  dependencies: ['three-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
+	  getSource: function () {
+	    var whichar;
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['three-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar.arDisplay;
+	      }
+	    }
+	    if (!this.source) {
+	      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
+	      if (whichar && whichar.arDisplay) {
+	        this.source = whichar;
+	      }
+	    }
+	    return this.source;
+	  },
+	  getPlanes: function () {
+	    return this.source ? this.source.getPlanes() : undefined;
+	  },
+	  getAnchors: function () {
+	    return this.source ? this.source.getAnchors() : undefined;
+	  },
+	  addImage: function (name, url, physicalWidth) {
+	    return this.source.addImage(name, url, physicalWidth);
+	  },
+	  removeImage: function (name) {
+	    return this.source.removeImage(name);
+	  },
 	  init: function () {
-	    this.el.setAttribute('three-ar', {
+	    var options = {
 	      takeOverCamera: this.data.takeOverCamera,
-	      cameraUserHeight: this.data.cameraUserHeight
-	    });
+	      cameraUserHeight: this.data.cameraUserHeight,
+	      worldSensing: this.data.worldSensing
+	    };
 
-	    this.el.setAttribute('mozilla-xr-ar', {
-	      takeOverCamera: this.data.takeOverCamera,
-	      cameraUserHeight: this.data.cameraUserHeight
-	    });
+	    this.el.setAttribute('three-ar', options);
+	    this.el.setAttribute('mozilla-xr-ar', options);
 
 	    if (this.data.hideUI) {
 	      this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});
@@ -1063,7 +1394,7 @@
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports) {
 
 	/* global AFRAME */
@@ -1132,7 +1463,7 @@
 
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports) {
 
 	/* global AFRAME */
