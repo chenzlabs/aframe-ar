@@ -296,7 +296,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                 id: element.uuid,
                 modelMatrix: element.transform
               };
-              if (element.type === 'image') {
+              if (element.type === 'image' || element.type === 'object') {
                 anchorData.name = element.uuid;
               }
               this.anchors_.set(element.uuid, anchorData);
@@ -375,18 +375,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
     addImage: function (name, url, physicalWidth) {
         if (!this.arDisplay) { return null; }
-/*
-NSDictionary *imageAnchorInfoDictionary = [message body];
-NSString *createDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
-// callback
-
-CGFloat physicalWidth = [referenceImageDictionary[@"physicalWidth"] doubleValue];
-NSString* b64String = referenceImageDictionary[@"buffer"];
-size_t width = (size_t) [referenceImageDictionary[@"imageWidth"] intValue];
-size_t height = (size_t) [referenceImageDictionary[@"imageHeight"] intValue];
-...
-result.name = referenceImageDictionary[@"uid"];
-*/
         // NOTE: looks like WebXR Viewer won't load from URL,
         //       so we need to convert from img element
         var aCanvas = document.createElement('canvas');
@@ -467,13 +455,6 @@ result.name = referenceImageDictionary[@"uid"];
 
     removeImage: function (name) {
         if (!this.arDisplay) { return null; }
-/*
-NSDictionary *imageAnchorInfoDictionary = [message body];
-NSString *imageName = imageAnchorInfoDictionary[WEB_AR_DETECTION_IMAGE_NAME_OPTION];
-// detectionImageName
-NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR_CALLBACK_OPTION];
-// callback
-*/
         window.callbackForRemoveImageAnchorCounter = (window.callbackForRemoveImageAnchorCounter || 0) + 1;
         var callbackName = 'callbackForRemoveImageAnchor_' + window.callbackForRemoveImageAnchorCounter;
         var imageName = name;
@@ -507,6 +488,90 @@ NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR
         window.webkit.messageHandlers.deactivateDetectionImage.postMessage({
           callback: callbackName,
           uid: imageName
+        });
+    },
+
+    // Link to new ARKit image marker and anchor support.
+
+    addObject: function (name, url) {
+        if (!this.arDisplay) { return null; }
+
+        // NOTE: also, WebXR Viewer doesn't pass back which image/name,
+        //       so we need a per-image/name callback
+        window.callbackForCreateObjectAnchorCounter = (window.callbackForCreateObjectAnchorCounter || 0) + 1;
+        var callbackName = 'callbackForCreateObjectAnchor_' + window.callbackForCreateObjectAnchorCounter;
+        var objectName = name;
+        //console.log('creating ', callbackName, ' for ', objectName);
+        window[callbackName] = function (data) {
+          //console.log(callbackName);
+          //console.log(data);
+          //var name = callbackName.substring(29);
+          if (data.created !== undefined) {
+            if (!data.created) {
+              // we failed to create the object, for whatever reason.
+              console.log('addObject: !created; ', data.error);
+              delete window[callbackName];
+            } else {
+              //console.log('addObject: created, activating ', objectName);
+              window.webkit.messageHandlers.activateDetectionObject.postMessage({
+                callback: callbackName,
+                uid: objectName
+              });
+            }
+          } else
+          if (data.activated !== undefined) {
+            if (!data.activated) {
+              // we failed to activate the object, for whatever reason.
+              console.log('addObject: !activated; ', data.error);
+            } else {
+              //console.log('addObject: activated ', objectName);
+            }
+            delete window[callbackName];
+          }
+        };
+
+        window.webkit.messageHandlers.createObjectAnchor.postMessage({
+          callback: callbackName,
+          uid: name,
+          url: url
+        });
+    },
+
+    removeObject: function (name) {
+        if (!this.arDisplay) { return null; }
+        window.callbackForRemoveObjectAnchorCounter = (window.callbackForRemoveObjectAnchorCounter || 0) + 1;
+        var callbackName = 'callbackForRemoveObjectAnchor_' + window.callbackForRemoveObjectAnchorCounter;
+        var objectName = name;
+        //console.log('removing ', callbackName, ' for ', objectName);
+        window[callbackName] = function (data) {
+          //console.log(callbackName);
+          //console.log(data);
+
+          if (data.deactivated !== undefined) {
+            if (!data.deactivated) {
+              console.log('!!! ' + callbackName + ': !deactivated', data.error);
+              delete window[callbackName];
+            } else {
+              //console.log(callbackName + ': deactivated, destroying', objectName);
+            }
+            window.webkit.messageHandlers.destroyDetectionObject.postMessage({
+              callback: callbackName,
+              uid: objectName
+            });
+          }
+          if (data.destroyed !== undefined) {
+            if (!data.destroyed) {
+              console.log('!!! ' + callbackName + ': !destroyed, ', data.error);
+            } else {
+              //console.log(callbackName + ': destroyed', objectName);
+            }
+            delete window[callbackName];
+          }
+        };
+
+        window.webkit.messageHandlers.deactivateDetectionObject.postMessage({
+          callback: callbackName,
+          uid: objectName
         });
     },
 
