@@ -781,7 +781,7 @@ NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR
 
                 hitsToReturn.push({
                     distance: hitpoint.distanceTo(worldpos),
-                    point: hitpoint, // Vector3
+                    point: hitpoint.clone(), // Vector3
                     object: (el && el.object3D) || this.el.sceneEl.object3D
 /*
                     // We don't have any of these properties...
