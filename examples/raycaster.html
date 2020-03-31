@@ -4,9 +4,8 @@
     <title></title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
-    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
-    <script src="build.js"></script>
+    <script src="https://rawgit.com/aframevr/aframe/master/dist/aframe-master.min.js"></script>
+    <script src="main.js"></script>
     <script>
       AFRAME.registerComponent('samsung-logo', {
         init: function () {
@@ -22,6 +21,35 @@
           });
         }
       });
+
+    // AFRAME no longer sends intersection event every time intersection changes position;
+    // this component is modified from docs to move a different entity than the one hit.
+    AFRAME.registerComponent('raycaster-move', {
+        schema: {
+            target: {type: 'selector'}
+        },
+        init: function () {
+            // Use events to figure out what raycaster is listening so we don't have to
+            // hardcode the raycaster.
+            this.el.addEventListener('raycaster-intersected', evt => {
+                this.raycaster = evt.detail.el;
+            });
+            this.el.addEventListener('raycaster-intersected-cleared', evt => {
+                this.raycaster = null;
+            });
+        },
+        update: function (oldData) {
+            //
+        },
+        tick: function () {
+            if (!this.raycaster) { return; }  // Not intersecting.
+
+            let intersection = this.raycaster.components.raycaster.getIntersection(this.el);
+            if (!intersection) { return; }
+            //console.log(intersection.point);
+            this.data.target.setAttribute("position", intersection.point);
+        }
+    });
 
       const content = `
       <a-entity obj-model="obj: #samsung-internet-obj;mtl: #samsung-internet-mtl" samsung-logo >
@@ -42,7 +70,7 @@
     </script>
   </head>
   <body>
-    <a-scene ar>           
+    <a-scene ar raycaster-move="target:#mark"> <!-- We're using ar, and mark should follow raycaster. -->
       <a-assets>
         <a-asset-item src="https://cdn.glitch.com/843c8e83-ac9e-499e-8aba-1332cd1fe4a6%2Fsilogo.mtl?1502470550479" id="samsung-internet-mtl"></a-asset-item>
         <a-asset-item src="https://cdn.glitch.com/843c8e83-ac9e-499e-8aba-1332cd1fe4a6%2Fsilogo_small.obj?1502705824920" id="samsung-internet-obj"></a-asset-item>
@@ -58,16 +86,16 @@
     <script>
       var raycaster = document.querySelector('[ar-raycaster]');
       var mark = document.querySelector('#mark');
-      
+
       raycaster.addEventListener('raycaster-intersection', function (evt) {
         // Turn the mark green and move it to the intersection point.
         mark.setAttribute('color', 'green');
-        // FIXME: lerp position
-        mark.setAttribute('position', evt.detail.intersections[0].point);
+        // Note, movement will now be done via raycaster-move component.
+        //mark.setAttribute('position', evt.detail.intersections[0].point);
       });
       
       raycaster.addEventListener('raycaster-intersection-cleared', function (evt) {
-        // Turn the mark red.  FIXME: lerp position
+        // Turn the mark red.
         mark.setAttribute('color', 'red');
       });      
     </script>
