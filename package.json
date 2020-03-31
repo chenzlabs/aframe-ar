@@ -4,9 +4,9 @@
   "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit/Core browsers, as well as WebXR Viewer.",
   "main": "src/index.js",
   "scripts": {
-    "build": "browserify src/index.js -o examples/build.js",
-    "dev": "budo src/index.js:build.js --dir examples --port 8000 --live --open",
-    "dist": "webpack src/index.js dist/aframe-ar.js && webpack -p src/index.js dist/aframe-ar.min.js && webpack src/index.js dist/aframe-three-ar.js",
+    "build": "browserify src/index.js -o examples/main.js",
+    "dev": "webpack-dev-server -d --hot --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
+    "dist": "webpack src/index.js dist/aframe-ar.js && webpack -p src/index.js dist/aframe-ar.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/chenzlabs/aframe-ar#readme",
   "devDependencies": {
-    "aframe": "chenzlabs/aframe#master",
+    "aframe": "aframevr/aframe#master",
     "browserify": "^13.0.0",
     "browserify-css": "^0.9.1",
     "budo": "^8.2.2",
@@ -68,7 +68,9 @@
     "sinon": "^1.17.5",
     "sinon-chai": "^2.8.0",
     "snazzy": "^4.0.0",
-    "webpack": "^1.13.0"
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7",
+    "webpack-dev-server": "^3.8.0"
   },
   "semistandard": {
     "ignore": [
