@@ -51,10 +51,7 @@ AFRAME.registerComponent('ar-camera', {
   
   checkWhichAR: function () {
     if (!this.whichar) {
-      var whichar = this.el.sceneEl.components['three-ar'];
-      if (!whichar || !whichar.arDisplay) {
-        whichar = this.el.sceneEl.components['mozilla-xr-ar'];
-      }
+      var whichar = this.el.sceneEl.components['ar'].getSource();
       if (!whichar || !whichar.arDisplay) { return; }
       this.whichar = whichar;
     }
