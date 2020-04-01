@@ -1,13 +1,12 @@
 # aframe-ar
 Basic [A-Frame](https://aframe.io) support for browser-based augmented reality (AR), 
-supporting the new [three.ar.js](https://github.com/google-ar/three.ar.js) library 
-and [WebARonARKit/Core browsers](https://developers.google.com/ar/develop/web/getting-started),
+supporting the new [WebXR AR support](https://github.com/immersive-web/webxr-ar-module) in Chrome v81+
 as well as [WebXR Viewer](https://blog.mozvr.com/experimenting-with-ar-and-the-web-on-ios/).
 
 By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene declaration:
 
 ```
-<a-scene ar>
+<a-scene ar="worldSensing:true">
 ...
 </a-scene>
 ```
@@ -17,14 +16,13 @@ By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene d
 Basic usage:
 ```
 <!-- First, include whichever version of A-Frame you like. -->
-<script src="https://rawgit.com/aframevr/aframe/master/dist/aframe-master.min.js"></script>
-<!-- Next, include three.ar.js; add the speech recognition polyfill if you want. -->
-<script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
 <!-- Last, include aframe-ar. -->
-<script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/chenzlabs/aframe-ar@master/dist/aframe-ar.min.js"></script>
 
 <!-- Place the ar component on your scene, and the camera will use AR by default. -->
-<a-scene ar>
+<!-- Note that world sensing is required to use AR raycaster with WebXR Viewer on iOS. -->
+<a-scene ar="worldSensing:true">
   <a-sphere radius="0.01" position="0 0.005 -0.5"></a-sphere>
 <a-scene>  
 ```
@@ -40,6 +38,12 @@ Basic AR camera: https://aframe-ar.glitch.me
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
 
+Remix of xr-horses: https://aframe-ar-horses.glitch.me
+- (as seen at https://twitter.com/milk/status/1244680165969383425?s=20)
+- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-horses)
+
+TODO updates:
+
 https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
 - (as seen at https://twitter.com/machenmusik/status/915692630926938112)
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-dragonites?path=index.html)
@@ -48,6 +52,6 @@ https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavan
 Reference links:
 
 - https://aframe.io
-- https://github.com/google-ar/three.ar.js
+- https://www.chromestatus.com/feature/5450241148977152
 - https://developers.google.com/ar/develop/web/getting-started
 - https://blog.mozvr.com/experimenting-with-ar-and-the-web-on-ios/
