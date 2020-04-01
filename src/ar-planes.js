@@ -5,15 +5,9 @@ AFRAME.registerComponent('ar-planes', {
   getPlaneSource: function () {
     var whichar;
     if (!this.planeSource) {
-      whichar = this.el.sceneEl.components['three-ar'];
-      if (whichar && whichar.arDisplay) {
-        this.planeSource = whichar.arDisplay;
-      }
-    }
-    if (!this.planeSource) {
-      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
-      if (whichar && whichar.arDisplay) {
-        this.planeSource = whichar;
+      whichar = this.el.sceneEl.components['ar'];
+      if (whichar) {
+        this.planeSource = whichar.getSource();
       }
     }
     return this.planeSource;
