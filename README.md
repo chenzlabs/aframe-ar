@@ -36,6 +36,7 @@ Basic AR camera: https://aframe-ar.glitch.me
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-raycaster-logo-test?path=ar.html)
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
+- NOTE: WebXR support for planes is still a work in progress, and this may not work yet with Chrome.
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
 
 Remix of xr-horses: https://aframe-ar-horses.glitch.me
