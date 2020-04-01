@@ -7,20 +7,17 @@ AFRAME.registerComponent('ar', {
     worldSensing: {default: false},
     hideUI: {default: true}
   },
-  dependencies: ['three-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
+  dependencies: ['webxr-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
   getSource: function () {
     var whichar;
     if (!this.source) {
-      whichar = this.el.sceneEl.components['three-ar'];
-      if (whichar && whichar.arDisplay) {
-        this.source = whichar.arDisplay;
-      }
-    }
-    if (!this.source) {
-      whichar = this.el.sceneEl.components['mozilla-xr-ar'];
-      if (whichar && whichar.arDisplay) {
-        this.source = whichar;
-      }
+      var self = this;
+      self.dependencies.forEach(function(sys) {
+        whichar = self.el.sceneEl.components[sys];
+        if (whichar && whichar.arDisplay) {
+          self.source = whichar;
+        }
+      });	
     }
     return this.source;
   },
@@ -43,8 +40,10 @@ AFRAME.registerComponent('ar', {
       worldSensing: this.data.worldSensing
     };
 
-    this.el.setAttribute('three-ar', options);
-    this.el.setAttribute('mozilla-xr-ar', options);
+    var self = this;
+    this.dependencies.forEach(function(sys) {
+        self.el.setAttribute(sys, options);
+    });
 
     if (this.data.hideUI) {
       this.el.sceneEl.setAttribute('vr-mode-ui', {enabled: false});

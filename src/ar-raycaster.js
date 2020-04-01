@@ -32,10 +32,14 @@ AFRAME.registerComponent('ar-raycaster', {
     // it appears that intersectObjects is now returning in rawIntersections
     var results = this.raycasterIntersectObjects(objects, recursive, rawIntersections);
     // Tack on AR hit result, if any.
-    if (rawIntersections) {
-      results = rawIntersections = rawIntersections.concat(this.hitAR());
-    } else {
-      results = results.concat(this.hitAR());
+    var hitARResults = this.hitAR();
+    if (hitARResults && hitARResults.length) {
+      if (rawIntersections) {
+        hitARResults.forEach((hit) => rawIntersections.push(hit));
+        results = rawIntersections;
+      } else {
+        hitARResults.forEach((hit) => results.push(hit));
+      }
     }
     return results;
   },        
@@ -54,14 +58,12 @@ AFRAME.registerComponent('ar-raycaster', {
 
   checkWhichAR: function () {
     if (!this.whichar) {
-      var whichar = this.el.sceneEl.components['three-ar'];
-      if (!whichar || !whichar.arDisplay) {
-        whichar = this.el.sceneEl.components['mozilla-xr-ar'];
-      }
+      var whichar = this.el.sceneEl.components['ar'];
+      if (whichar) { whichar = whichar.getSource ? whichar.getSource() : undefined; }
       if (!whichar || !whichar.arDisplay) { return; }
       this.whichar = whichar;
     }
     return this.whichar;
-  }
+  }  
 });
 

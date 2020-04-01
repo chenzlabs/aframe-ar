@@ -22,7 +22,7 @@ var base64    = ''
 var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
 var bytes      = buffer;  // assume it's a typedArrayBuffer 
-		
+        
 if (buffer instanceof ArrayBuffer) {
 bytes = new Uint8Array(arrayBuffer)
 } else if (buffer instanceof ImageData) {
@@ -191,7 +191,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // Compose data to use with watchAR.
         var data = {
             options: {
-	        location: true,
+            location: true,
                 camera: true,
                 objects: true,
                 light_intensity: true,
@@ -524,238 +524,238 @@ NSString *deactivateDetectionImageCallback = [[message body] objectForKey:WEB_AR
     hitTestNoAnchor: (function () {
         // Temporary variables, only within closure scope.
 
-		/**
-		 * The result of a raycast into the AR world encoded as a transform matrix.
-		 * This structure has a single property - modelMatrix - which encodes the
-		 * translation of the intersection of the hit in the form of a 4x4 matrix.
-		 * @constructor
-		 */
-		function VRHit() {
-			this.modelMatrix = new Float32Array(16);
-			return this;
-		};
+        /**
+         * The result of a raycast into the AR world encoded as a transform matrix.
+         * This structure has a single property - modelMatrix - which encodes the
+         * translation of the intersection of the hit in the form of a 4x4 matrix.
+         * @constructor
+         */
+        function VRHit() {
+            this.modelMatrix = new Float32Array(16);
+            return this;
+        };
 
                        /**
-			* Cached vec3, mat4, and quat structures needed for the hit testing to
-			* avoid generating garbage.
-			* @type {Object}
-			*/
-			var hitVars = {
-			 rayStart: new THREE.Vector3(), //vec3.create(),
-			 rayEnd: new THREE.Vector3(), //vec3.create(),
-			 cameraPosition: new THREE.Vector3(), //vec3.create(),
-			 cameraQuaternion: new THREE.Quaternion(), //quat.create(),	
-			 //modelViewMatrix: new THREE.Matrix4(), //mat4.create(),
-			 //projectionMatrix: new THREE.Matrix4(), //mat4.create(),
-			 projViewMatrix: new THREE.Matrix4(), //mat4.create(),
-			 worldRayStart: new THREE.Vector3(), //vec3.create(),
-			 worldRayEnd: new THREE.Vector3(), //vec3.create(),
-			 worldRayDir: new THREE.Vector3(), //vec3.create(),
-			 planeMatrix: new THREE.Matrix4(), //mat4.create(),
-			 planeMatrixInverse: new THREE.Matrix4(), //mat4.create(),
-			 planeExtent: new THREE.Vector3(), //vec3.create(),
-			 planePosition: new THREE.Vector3(), //vec3.create(),
-			 planeCenter: new THREE.Vector3(), //vec3.create(),
-			 planeNormal: new THREE.Vector3(), //vec3.create(),
-			 planeIntersection: new THREE.Vector3(), //vec3.create(),
-			 planeIntersectionLocal: new THREE.Vector3(), //vec3.create(),
-			 planeHit: new THREE.Matrix4(), //mat4.create()
-			 planeQuaternion: new THREE.Quaternion()  // quat.create()
-		 };
+            * Cached vec3, mat4, and quat structures needed for the hit testing to
+            * avoid generating garbage.
+            * @type {Object}
+            */
+            var hitVars = {
+             rayStart: new THREE.Vector3(), //vec3.create(),
+             rayEnd: new THREE.Vector3(), //vec3.create(),
+             cameraPosition: new THREE.Vector3(), //vec3.create(),
+             cameraQuaternion: new THREE.Quaternion(), //quat.create(),	
+             //modelViewMatrix: new THREE.Matrix4(), //mat4.create(),
+             //projectionMatrix: new THREE.Matrix4(), //mat4.create(),
+             projViewMatrix: new THREE.Matrix4(), //mat4.create(),
+             worldRayStart: new THREE.Vector3(), //vec3.create(),
+             worldRayEnd: new THREE.Vector3(), //vec3.create(),
+             worldRayDir: new THREE.Vector3(), //vec3.create(),
+             planeMatrix: new THREE.Matrix4(), //mat4.create(),
+             planeMatrixInverse: new THREE.Matrix4(), //mat4.create(),
+             planeExtent: new THREE.Vector3(), //vec3.create(),
+             planePosition: new THREE.Vector3(), //vec3.create(),
+             planeCenter: new THREE.Vector3(), //vec3.create(),
+             planeNormal: new THREE.Vector3(), //vec3.create(),
+             planeIntersection: new THREE.Vector3(), //vec3.create(),
+             planeIntersectionLocal: new THREE.Vector3(), //vec3.create(),
+             planeHit: new THREE.Matrix4(), //mat4.create()
+             planeQuaternion: new THREE.Quaternion()  // quat.create()
+         };
  
-		 /**
-			* Tests whether the given ray intersects the given plane.
-			*
-			* @param {!vec3} planeNormal The normal of the plane.
-			* @param {!vec3} planePosition Any point on the plane.
-			* @param {!vec3} rayOrigin The origin of the ray.
-			* @param {!vec3} rayDirection The direction of the ray (normalized).
-			* @return {number} The t-value of the intersection (-1 for none).
-			*/
-		 var rayIntersectsPlane = (function() {
-			 var rayToPlane = new THREE.Vector3();
-			 return function(planeNormal, planePosition, rayOrigin, rayDirection) {
-				 // assuming vectors are all normalized
-				 var denom = planeNormal.dot(rayDirection);
-				 rayToPlane.subVectors(planePosition, rayOrigin);
-				 return rayToPlane.dot(planeNormal) / denom;
-			 };
-		 })();
+         /**
+            * Tests whether the given ray intersects the given plane.
+            *
+            * @param {!vec3} planeNormal The normal of the plane.
+            * @param {!vec3} planePosition Any point on the plane.
+            * @param {!vec3} rayOrigin The origin of the ray.
+            * @param {!vec3} rayDirection The direction of the ray (normalized).
+            * @return {number} The t-value of the intersection (-1 for none).
+            */
+         var rayIntersectsPlane = (function() {
+             var rayToPlane = new THREE.Vector3();
+             return function(planeNormal, planePosition, rayOrigin, rayDirection) {
+                 // assuming vectors are all normalized
+                 var denom = planeNormal.dot(rayDirection);
+                 rayToPlane.subVectors(planePosition, rayOrigin);
+                 return rayToPlane.dot(planeNormal) / denom;
+             };
+         })();
  
-		 /**
-			* Sorts based on the distance from the VRHits to the camera.
-			*
-			* @param {!VRHit} a The first hit to compare.
-			* @param {!VRHit} b The second hit item to compare.
-			* @returns {number} -1 if a is closer than b, otherwise 1.
-			*/
-		 var sortFunction = function(a, b) {
-			 // Get the matrix of hit a.
-			 hitVars.planeMatrix.fromArray(a.modelMatrix);
-			 // Get the translation component of a's matrix.
-			 hitVars.planeIntersection.setFromMatrixPosition(hitVars.planeMatrix);
-			 // Get the distance from the intersection point to the camera.
-			 var distA = hitVars.planeIntersection.distanceTo(hitVars.cameraPosition);
+         /**
+            * Sorts based on the distance from the VRHits to the camera.
+            *
+            * @param {!VRHit} a The first hit to compare.
+            * @param {!VRHit} b The second hit item to compare.
+            * @returns {number} -1 if a is closer than b, otherwise 1.
+            */
+         var sortFunction = function(a, b) {
+             // Get the matrix of hit a.
+             hitVars.planeMatrix.fromArray(a.modelMatrix);
+             // Get the translation component of a's matrix.
+             hitVars.planeIntersection.setFromMatrixPosition(hitVars.planeMatrix);
+             // Get the distance from the intersection point to the camera.
+             var distA = hitVars.planeIntersection.distanceTo(hitVars.cameraPosition);
  
-			 // Get the matrix of hit b.
-			 hitVars.planeMatrix.fromArray(b.modelMatrix);
-			 // Get the translation component of b's matrix.
-			 hitVars.planeIntersection.setFromMatrixPosition(hitVars.planeMatrix);
-			 // Get the distance from the intersection point to the camera.
-			 var distB = hitVars.planeIntersection.distanceTo(hitVars.cameraPosition);
+             // Get the matrix of hit b.
+             hitVars.planeMatrix.fromArray(b.modelMatrix);
+             // Get the translation component of b's matrix.
+             hitVars.planeIntersection.setFromMatrixPosition(hitVars.planeMatrix);
+             // Get the distance from the intersection point to the camera.
+             var distB = hitVars.planeIntersection.distanceTo(hitVars.cameraPosition);
  
-			 // Return comparison of distance from camera to a and b.
-			 return distA < distB ? -1 : 1;
-		 };
+             // Return comparison of distance from camera to a and b.
+             return distA < distB ? -1 : 1;
+         };
  
-		 return function(x, y) {
-			 // Coordinates must be in normalized screen space.
-			 if (x < 0 || x > 1 || y < 0 || y > 1) {
-				 throw new Error(
-						 "hitTest - x and y values must be normalized [0,1]!")
-				 ;
-			 }
+         return function(x, y) {
+             // Coordinates must be in normalized screen space.
+             if (x < 0 || x > 1 || y < 0 || y > 1) {
+                 throw new Error(
+                         "hitTest - x and y values must be normalized [0,1]!")
+                 ;
+             }
  
-			 var hits = [];
-			 // If there are no anchors detected, there will be no hits.
-			 var planes = this.getPlanes();
-			 if (!planes || planes.length === 0) {
-				 return hits;
-			 }
+             var hits = [];
+             // If there are no anchors detected, there will be no hits.
+             var planes = this.getPlanes();
+             if (!planes || planes.length === 0) {
+                 return hits;
+             }
 
-			 // Create a ray in screen space for the hit test ([-1, 1] with y flip).
-			 hitVars.rayStart.set(2 * x - 1, 2 * (1 - y) - 1, 0);
-			 hitVars.rayEnd.set(2 * x - 1, 2 * (1 - y) - 1, 1);
+             // Create a ray in screen space for the hit test ([-1, 1] with y flip).
+             hitVars.rayStart.set(2 * x - 1, 2 * (1 - y) - 1, 0);
+             hitVars.rayEnd.set(2 * x - 1, 2 * (1 - y) - 1, 1);
 
-			 // Set the projection matrix.
-			 //hitVars.projectionMatrix.fromArray(this.projectionMatrix);
+             // Set the projection matrix.
+             //hitVars.projectionMatrix.fromArray(this.projectionMatrix);
  
-			 // Set the model view matrix.
-			 //hitVars.modelViewMatrix.fromArray(this.viewMatrix);
+             // Set the model view matrix.
+             //hitVars.modelViewMatrix.fromArray(this.viewMatrix);
  
-			 // Combine the projection and model view matrices.
-			 hitVars.planeMatrix.multiplyMatrices(
-				 this.projectionMatrix, //hitVars.projectionMatrix,
-				 this.viewMatrix //hitVars.modelViewMatrix
-			 );
-			 // Invert the combined matrix because we need to go from screen -> world.
-			 hitVars.projViewMatrix.getInverse(hitVars.planeMatrix);
+             // Combine the projection and model view matrices.
+             hitVars.planeMatrix.multiplyMatrices(
+                 this.projectionMatrix, //hitVars.projectionMatrix,
+                 this.viewMatrix //hitVars.modelViewMatrix
+             );
+             // Invert the combined matrix because we need to go from screen -> world.
+             hitVars.projViewMatrix.getInverse(hitVars.planeMatrix);
  
-			 // Transform the screen-space ray start and end to world-space.
-			 hitVars.worldRayStart.copy(hitVars.rayStart)
-				 .applyMatrix4(hitVars.projViewMatrix);
-			 hitVars.worldRayEnd.copy(hitVars.rayEnd)
-				 .applyMatrix4(hitVars.projViewMatrix);
+             // Transform the screen-space ray start and end to world-space.
+             hitVars.worldRayStart.copy(hitVars.rayStart)
+                 .applyMatrix4(hitVars.projViewMatrix);
+             hitVars.worldRayEnd.copy(hitVars.rayEnd)
+                 .applyMatrix4(hitVars.projViewMatrix);
  
-			 // Subtract start from end to get the ray direction and then normalize.
-			 hitVars.worldRayDir.subVectors(
-				 hitVars.worldRayEnd,
-				 hitVars.worldRayStart
-			 ).normalize();
+             // Subtract start from end to get the ray direction and then normalize.
+             hitVars.worldRayDir.subVectors(
+                 hitVars.worldRayEnd,
+                 hitVars.worldRayStart
+             ).normalize();
 
-			 // Go through all the anchors and test for intersections with the ray.
-			 for (var i = 0; i < planes.length; i++) {
-				 var plane = planes[i];
-				 // Get the anchor transform.
-				 hitVars.planeMatrix.fromArray(plane.modelMatrix);
+             // Go through all the anchors and test for intersections with the ray.
+             for (var i = 0; i < planes.length; i++) {
+                 var plane = planes[i];
+                 // Get the anchor transform.
+                 hitVars.planeMatrix.fromArray(plane.modelMatrix);
  
-				 // Get the position of the anchor in world-space.
-				 hitVars.planeCenter.set(plane.center.x, plane.center.y, plane.center.z);
-				 hitVars.planePosition.copy(hitVars.planeCenter)
-					 .applyMatrix4(hitVars.planeMatrix)
+                 // Get the position of the anchor in world-space.
+                 hitVars.planeCenter.set(plane.center.x, plane.center.y, plane.center.z);
+                 hitVars.planePosition.copy(hitVars.planeCenter)
+                     .applyMatrix4(hitVars.planeMatrix)
 
-				 hitVars.planeAlignment = plane.alignment
+                 hitVars.planeAlignment = plane.alignment
  
-				 // Get the plane normal.
-				 if (hitVars.planeAlignment === 0) {
-					 hitVars.planeNormal.set(0, 1, 0);
+                 // Get the plane normal.
+                 if (hitVars.planeAlignment === 0) {
+                     hitVars.planeNormal.set(0, 1, 0);
                  } else {
-					 hitVars.planeNormal.set(hitVars.planeMatrix[4], hitVars.planeMatrix[5], hitVars.planeMatrix[6]);
+                     hitVars.planeNormal.set(hitVars.planeMatrix[4], hitVars.planeMatrix[5], hitVars.planeMatrix[6]);
                  }
  
-				 // Check if the ray intersects the plane.
-				 var t = rayIntersectsPlane(
-					 hitVars.planeNormal,
-					 hitVars.planePosition,
-					 hitVars.worldRayStart,
-					 hitVars.worldRayDir
-				 );
+                 // Check if the ray intersects the plane.
+                 var t = rayIntersectsPlane(
+                     hitVars.planeNormal,
+                     hitVars.planePosition,
+                     hitVars.worldRayStart,
+                     hitVars.worldRayDir
+                 );
 
-				 // if t < 0, there is no intersection.
-				 if (t < 0) {
-					 continue;
-				 }
+                 // if t < 0, there is no intersection.
+                 if (t < 0) {
+                     continue;
+                 }
  
-				 // Calculate the actual intersection point.
-				 hitVars.planeIntersectionLocal.copy(hitVars.worldRayDir).multiplyScalar(t);
-				 hitVars.planeIntersection.addVectors(
-					 hitVars.worldRayStart,
-					 hitVars.planeIntersectionLocal
-				 );
-				 // Get the plane extents (extents are in plane local space).
-				 hitVars.planeExtent.set(plane.extent[0], 0, plane.extent[1]);
-				 /*
-					 ///////////////////////////////////////////////
-					 // Test by converting extents to world-space.
-					 // TODO: get this working to avoid matrix inversion in method below.
+                 // Calculate the actual intersection point.
+                 hitVars.planeIntersectionLocal.copy(hitVars.worldRayDir).multiplyScalar(t);
+                 hitVars.planeIntersection.addVectors(
+                     hitVars.worldRayStart,
+                     hitVars.planeIntersectionLocal
+                 );
+                 // Get the plane extents (extents are in plane local space).
+                 hitVars.planeExtent.set(plane.extent[0], 0, plane.extent[1]);
+                 /*
+                     ///////////////////////////////////////////////
+                     // Test by converting extents to world-space.
+                     // TODO: get this working to avoid matrix inversion in method below.
  
-					 // Get the rotation component of the anchor transform.
-					 mat4.getRotation(hitVars.planeQuaternion, hitVars.planeMatrix);
+                     // Get the rotation component of the anchor transform.
+                     mat4.getRotation(hitVars.planeQuaternion, hitVars.planeMatrix);
  
-					 // Convert the extent into world space.
-					 vec3.transformQuat(
-					 hitVars.planeExtent, hitVars.planeExtent, hitVars.planeQuaternion);
+                     // Convert the extent into world space.
+                     vec3.transformQuat(
+                     hitVars.planeExtent, hitVars.planeExtent, hitVars.planeQuaternion);
  
-					 // Check if intersection is outside of the extent of the anchor.
-					 if (Math.abs(hitVars.planeIntersection[0] - hitVars.planePosition[0]) > hitVars.planeExtent[0] / 2) {
-					 continue;
-					 }
-					 if (Math.abs(hitVars.planeIntersection[2] - hitVars.planePosition[2]) > hitVars.planeExtent[2] / 2) {
-					 continue;
-					 }
-					 ////////////////////////////////////////////////
-					 */
+                     // Check if intersection is outside of the extent of the anchor.
+                     if (Math.abs(hitVars.planeIntersection[0] - hitVars.planePosition[0]) > hitVars.planeExtent[0] / 2) {
+                     continue;
+                     }
+                     if (Math.abs(hitVars.planeIntersection[2] - hitVars.planePosition[2]) > hitVars.planeExtent[2] / 2) {
+                     continue;
+                     }
+                     ////////////////////////////////////////////////
+                     */
  
-				 ////////////////////////////////////////////////
-				 // Test by converting intersection into plane-space.
-				 hitVars.planeMatrixInverse.getInverse(hitVars.planeMatrix);
-				 hitVars.planeIntersectionLocal.copy(hitVars.planeIntersection)
-					 .applyMatrix4(hitVars.planeMatrixInverse);
+                 ////////////////////////////////////////////////
+                 // Test by converting intersection into plane-space.
+                 hitVars.planeMatrixInverse.getInverse(hitVars.planeMatrix);
+                 hitVars.planeIntersectionLocal.copy(hitVars.planeIntersection)
+                     .applyMatrix4(hitVars.planeMatrixInverse);
  
-				 // Check if intersection is outside of the extent of the anchor.
-				 // Tolerance is added to match the behavior of the native hitTest call.
-				 var tolerance = 0.0075;
-				 if (
-					 Math.abs(hitVars.planeIntersectionLocal.x) >
-					 hitVars.planeExtent.x / 2 + tolerance
-				 ) {
-					 continue;
-				 }
-				 if (
-					 Math.abs(hitVars.planeIntersectionLocal.z) >
-					 hitVars.planeExtent.z / 2 + tolerance
-				 ) {
-					 continue;
-				 }
+                 // Check if intersection is outside of the extent of the anchor.
+                 // Tolerance is added to match the behavior of the native hitTest call.
+                 var tolerance = 0.0075;
+                 if (
+                     Math.abs(hitVars.planeIntersectionLocal.x) >
+                     hitVars.planeExtent.x / 2 + tolerance
+                 ) {
+                     continue;
+                 }
+                 if (
+                     Math.abs(hitVars.planeIntersectionLocal.z) >
+                     hitVars.planeExtent.z / 2 + tolerance
+                 ) {
+                     continue;
+                 }
  
-				 ////////////////////////////////////////////////
+                 ////////////////////////////////////////////////
  
-				 // The intersection is valid - create a matrix from hit position.
-				 hitVars.planeQuaternion.setFromRotationMatrix(hitVars.planeMatrix);
-				 hitVars.planeHit.makeRotationFromQuaternion(hitVars.planeQuaternion).setPosition(hitVars.planeIntersection);
-				var hit = new VRHit();
-				 for (var j = 0; j < 16; j++) {
-					 hit.modelMatrix[j] = hitVars.planeHit.elements[j];
-				 }
-				 hit.i = i;
-				 hits.push(hit);
-			 }
+                 // The intersection is valid - create a matrix from hit position.
+                 hitVars.planeQuaternion.setFromRotationMatrix(hitVars.planeMatrix);
+                 hitVars.planeHit.makeRotationFromQuaternion(hitVars.planeQuaternion).setPosition(hitVars.planeIntersection);
+                var hit = new VRHit();
+                 for (var j = 0; j < 16; j++) {
+                     hit.modelMatrix[j] = hitVars.planeHit.elements[j];
+                 }
+                 hit.i = i;
+                 hits.push(hit);
+             }
  
 
-			 // Sort the hits by distance.
-			 hits.sort(sortFunction);
-			 return hits;
-		 };
+             // Sort the hits by distance.
+             hits.sort(sortFunction);
+             return hits;
+         };
     })(),
 
     hitAR: (function () {
