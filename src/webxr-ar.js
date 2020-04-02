@@ -52,22 +52,29 @@ AFRAME.registerComponent('webxr-ar', {
             var self = this;
         self.arDisplay = {type: 'webxr-ar'};
 
-        if (navigator.xr.isSessionSupported('immersive-ar')) {
-            this.el.sceneEl.setAttribute('webxr', "requiredFeatures:hit-test,local-floor");
-            this.el.sceneEl.setAttribute('vr-mode-ui', "enabled", "true");
+        navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
+          if (supported) {
+            // FIXME: issue https://github.com/chenzlabs/aframe-ar/issues/46!
+            if (self.data.worldSensing) {
+                self.el.sceneEl.setAttribute('webxr', "requiredFeatures:hit-test,local-floor");
+            } else {
+                self.el.sceneEl.setAttribute('webxr', "requiredFeatures:local-floor");
+            }
+
+            self.el.sceneEl.setAttribute('vr-mode-ui', "enabled", "true");
             // auto-entering AR doesn't work.
 
-            this.xrHitTestSource = null;
-            this.viewerSpace = null;
-            this.refSpace = null;
+            self.xrHitTestSource = null;
+            self.viewerSpace = null;
+            self.refSpace = null;
 
-            this.el.sceneEl.renderer.xr.addEventListener('sessionend', (ev) => {
-                this.viewerSpace = null;
-                this.refSpace = null;
-                this.xrHitTestSource = null;
+            self.el.sceneEl.renderer.xr.addEventListener('sessionend', (ev) => {
+                self.viewerSpace = null;
+                self.refSpace = null;
+                self.xrHitTestSource = null;
             });
-            this.el.sceneEl.renderer.xr.addEventListener('sessionstart', (ev) => {
-                let session = this.el.sceneEl.renderer.xr.getSession();
+            self.el.sceneEl.renderer.xr.addEventListener('sessionstart', (ev) => {
+                let session = self.el.sceneEl.renderer.xr.getSession();
 
                 session.addEventListener('select', function () {
                     // dispatch click on window.
@@ -83,19 +90,22 @@ AFRAME.registerComponent('webxr-ar', {
                 });
 
                 session.requestReferenceSpace('viewer').then((space) => {
-                    this.viewerSpace = space;
-                    session.requestHitTestSource({space: this.viewerSpace})
-                    .then((hitTestSource) => {
-                        this.xrHitTestSource = hitTestSource;
-                        console.log('session requestHitTestSource OK');
-                    })
+                    self.viewerSpace = space;
+                    if (self.data.worldSensing) {
+                        session.requestHitTestSource({space: self.viewerSpace})
+                        .then((hitTestSource) => {
+                            self.xrHitTestSource = hitTestSource;
+                            console.log('session requestHitTestSource OK');
+                        })
+                    }
                 });
 
                 session.requestReferenceSpace('local-floor').then((space) => {
-                    this.refSpace = space;
+                    self.refSpace = space;
                 });
             });
-        }
+          }
+        });
     },
 
     getPosition: function () {
