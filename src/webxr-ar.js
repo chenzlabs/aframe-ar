@@ -20,12 +20,116 @@ AFRAME.registerComponent('webxr-ar', {
         } else {
             this.el.sceneEl.addEventListener('loaded', this.onceSceneLoaded);
         }
+
+        // Add planes handling, so we can do synchronous hit test.
+
+        this.rawPlanes_ = null;
+        this.planes_ = new Map();
+        this.anchors_ = new Map();
+    },
+
+    convertPolygonToVertices: function(polygon) {
+        return newVertices;
+    },
+
+    convertedPlane: function(rawPlane, pose) {
+        var mins = [0, 0];
+        var maxs = [0, 0];
+        var verticesLength = rawPlane.polygon.length;
+        var newVertices = new Float32Array(verticesLength * 3);
+        var i = 0;
+        var j = 0;
+        var vertex;
+        for (i = 0; i < verticesLength; i++) {
+            vertex = rawPlane.polygon[i];
+            newVertices[j] = vertex.x;
+            newVertices[j + 1] = vertex.y;
+            newVertices[j + 2] = vertex.z;
+            j += 3;
+            if (i == 0) {
+                mins[0] = maxs[0] = vertex.x;
+                mins[1] = maxs[1] = vertex.z;
+            } else {
+                if (mins[0] > vertex.x) { mins[0] = vertex.x; }
+                if (maxs[0] < vertex.x) { maxs[0] = vertex.x; }
+                if (mins[1] > vertex.z) { mins[1] = vertex.z; }
+                if (maxs[1] > vertex.z) { mins[0] = vertex.z; }
+            }
+        }
+        var position = pose.transform.position;
+        rawPlane.position.set(position.x, position.y, position.z);
+        var converted = {
+            id: rawPlane.id,
+            center: rawPlane.position,
+            extent: [maxs[0] - mins[0], maxs[1] - mins[1]],
+            modelMatrix: pose.transform.matrix,
+            alignment: rawPlane.orientation != 'Horizontal' ? 1 : 0,
+            vertices: newVertices
+        };
+        return converted;
+    },
+
+    rawPlaneRemoved: function(rawPlane) {
+        // remove the converted plane
+        this.planes_.delete(rawPlane.id);
+    },
+
+    rawPlaneUpdated: function(rawPlane, pose) {
+        // convert the updated plane
+        this.planes_.set(rawPlane.id, this.convertedPlane(rawPlane, pose));
+    },
+
+    rawPlaneNotUpdated: function(rawPlane, pose) {
+        // FIXME: check is broken so update anyway
+        this.rawPlaneUpdated(rawPlane, pose);
+        // do nothing
+    },
+
+    rawPlaneCreated: function(rawPlane, pose) {
+        // assign and attach an id... for now, use Math.random()
+        rawPlane.id = Math.random();
+        rawPlane.position = new THREE.Vector3();
+        // convert the plane
+        this.planes_[rawPlane.id] = this.convertedPlane(rawPlane, pose);
     },
 
     tick: function (t, dt) {
-        if (!this.arDisplay || !this.arDisplay.getFrameData) { return; }
+        let frame = this.el.sceneEl.frame;
+        if (!this.arDisplay
+         || !frame
+         || !frame.worldInformation) { return; }
 
-        // let aframe do its thing
+        // use the planes information
+        let world = frame.worldInformation;
+
+        // check for removed planes
+        this.rawPlanes_ && this.rawPlanes_.forEach(plane => {
+            if(!world.detectedPlanes || !world.detectedPlanes.has(plane)) {
+                // Handle removed plane - `plane` was present in previous frame but is no longer tracked.
+                this.rawPlaneRemoved(plane);
+            }
+        });
+
+        // check for changed planes
+        let timestamp = this.el.sceneEl.time;
+        world.detectedPlanes && world.detectedPlanes.forEach(plane => {
+            let planePose = frame.getPose(plane.planeSpace, this.refSpace);
+            if (this.rawPlanes_.has(plane)) {
+                if(plane.lastChangedTime == timestamp) {
+                    // Handle previously seen plane that was updated in current frame.
+                    this.rawPlaneUpdated(plane, planePose);
+                } else {
+                    // Handle previously seen plane that was not updated in current frame.
+                    // Depending on the application, this could be a no-op.
+                    this.rawPlaneNotUpdated(plane, planePose);
+                }
+            } else {
+                // Handle new plane.
+                this.rawPlaneCreated(plane, planePose);
+            }
+        });
+ 
+        this.rawPlanes_ = world.detectedPlanes;
     },
 
     takeOverCamera: function (camera) {
@@ -127,6 +231,11 @@ AFRAME.registerComponent('webxr-ar', {
                 session.requestReferenceSpace('local-floor').then((space) => {
                     self.refSpace = space;
                 });
+
+                // Ask for planes, if we should.
+                if (self.data.worldSensing) {
+                    session.updateWorldTrackingState({planeDetectionState : {enabled : true}});
+                }
             });
           }
         });
@@ -200,6 +309,30 @@ AFRAME.registerComponent('webxr-ar', {
             }
 
             return hitsToReturn;
-        }        
-    })()
+        }
+    })(),
+
+    // Link to image marker and anchor support.
+
+    addImage: function (name, url, physicalWidth) {
+        if (!this.arDisplay) { return null; }
+
+        return null;
+    },
+
+    removeImage: function (name) {
+        if (!this.arDisplay) { return null; }
+
+        return null;
+    },
+
+    getAnchors: function () {
+        return Array.from(this.anchors_.values());
+    },
+
+    // Use planes to do synchronous hit test.
+
+    getPlanes: function () {
+        return Array.from(this.planes_.values());
+    }
 });
