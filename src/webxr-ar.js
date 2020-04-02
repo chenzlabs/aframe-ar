@@ -87,7 +87,7 @@ AFRAME.registerComponent('webxr-ar', {
 
     rawPlaneCreated: function(rawPlane, pose) {
         // assign and attach an id... for now, use Math.random()
-        rawPlane.id = Math.random();
+        rawPlane.id = Math.random().toString().substring(2);
         rawPlane.position = new THREE.Vector3();
         // convert the plane
         this.planes_[rawPlane.id] = this.convertedPlane(rawPlane, pose);
