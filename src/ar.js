@@ -4,8 +4,8 @@ AFRAME.registerComponent('ar', {
   schema: {
     takeOverCamera: {default: true},
     cameraUserHeight: {default: false},
-    worldSensing: {default: false},
-    hideUI: {default: true}
+    worldSensing: {default: true},
+    hideUI: {default: false}
   },
   dependencies: ['webxr-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
   getSource: function () {
