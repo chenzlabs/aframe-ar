@@ -53,7 +53,7 @@ AFRAME.registerComponent('webxr-ar', {
                 if (mins[0] > vertex.x) { mins[0] = vertex.x; }
                 if (maxs[0] < vertex.x) { maxs[0] = vertex.x; }
                 if (mins[1] > vertex.z) { mins[1] = vertex.z; }
-                if (maxs[1] > vertex.z) { mins[0] = vertex.z; }
+                if (maxs[1] < vertex.z) { maxs[1] = vertex.z; }
             }
         }
         var position = pose.transform.position;
@@ -204,15 +204,34 @@ AFRAME.registerComponent('webxr-ar', {
             self.el.sceneEl.renderer.xr.addEventListener('sessionstart', (ev) => {
                 let session = self.el.sceneEl.renderer.xr.getSession();
 
-                session.addEventListener('select', function () {
-                    // dispatch click on window.
-                    // FIXME: not always right...
+                session.addEventListener('select', function (e) {
+                    // dispatch touchstart
                     setTimeout(() => {
-                        var event = new MouseEvent('click', {
+                        var event = new TouchEvent('touchstart', {
                             view: window,
                             bubbles: true,
                             cancelable: true
                         });
+                        event.targetTouches = [{
+                            pageX: e.inputSource.gamepad.axes[0],
+                            pageY: e.inputSource.gamepad.axes[1]
+                        }];
+                        window.dispatchEvent(event);
+                    });
+                });
+
+                session.addEventListener('selectend', function (e) {
+                    // dispatch touchend
+                    setTimeout(() => {
+                        var event = new TouchEvent('touchend', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        event.targetTouches = [{
+                            pageX: e.inputSource.gamepad.axes[0],
+                            pageY: e.inputSource.gamepad.axes[1]
+                        }];
                         window.dispatchEvent(event);
                     });
                 });
