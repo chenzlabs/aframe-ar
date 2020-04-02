@@ -6,7 +6,7 @@
   "scripts": {
     "build": "browserify src/index.js -o examples/main.js",
     "dev": "webpack-dev-server -d --mode=development --hot --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
-    "dist": "webpack src/index.js --mode=development -o dist/aframe-ar.js && webpack -p src/index.js -o dist/aframe-ar.min.js",
+    "dist": "webpack src/index.js --mode=development -o dist/aframe-ar.js && webpack --devtool source-map -p src/index.js -o dist/aframe-ar.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
