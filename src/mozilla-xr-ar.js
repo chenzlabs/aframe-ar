@@ -84,7 +84,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
     schema: {
         takeOverCamera: {default: true},
         cameraUserHeight: {default: false},
-        worldSensing: {default: false}
+        worldSensing: {default: true}
     },
 
     init: function () {
@@ -176,8 +176,28 @@ AFRAME.registerComponent('mozilla-xr-ar', {
           };
         });
 
-        // Call initAR.
-        window.webkit.messageHandlers.initAR.postMessage(data);
+        // act like Chrome WebXR by forcibly showing AR button and making it work
+        var vrmodeui = this.el.sceneEl.components['vr-mode-ui'];
+        var newarbutton = vrmodeui.enterAREl.cloneNode(true);
+        vrmodeui.enterAREl.parentNode.replaceChild(newarbutton, vrmodeui.enterAREl);
+        vrmodeui.enterAREl = newarbutton;
+        vrmodeui.enterAREl.classList.remove('a-hidden');
+        vrmodeui.enterAREl.onclick = function() {
+          var self = AFRAME.scenes[0];
+          self.addState('ar-mode');
+          self.addState('vr-mode');
+          self.emit('enter-vr', {target: self});
+          // this caused Cardboard prompt, so hide it 
+          vrmodeui.orientationModalEl.classList.add('a-hidden');
+/*
+          // not sure these are necessary
+          self.addFullScreenStyles();
+          self.renderer.setAnimationLoop(self.render);
+          self.resize();
+*/
+          // Call initAR.
+          window.webkit.messageHandlers.initAR.postMessage(data);          
+        };
     },
 
     checkForARDisplay: function () {
