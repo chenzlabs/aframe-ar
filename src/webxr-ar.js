@@ -54,11 +54,35 @@ AFRAME.registerComponent('webxr-ar', {
 
         navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
           if (supported) {
-            // FIXME: issue https://github.com/chenzlabs/aframe-ar/issues/46!
-            if (self.data.worldSensing) {
-                self.el.sceneEl.setAttribute('webxr', "requiredFeatures:hit-test,local-floor");
+            let ourRequiredFeatures = ['local-floor'];
+            let ourOptionalFeatures = [];
+            (self.data.worldSensing ? ourRequiredFeatures : ourOptionalFeatures).push('hit-test');
+            let existingFeatures = self.el.sceneEl.getAttribute('webxr');
+            if (!existingFeatures) {
+                // here, we assume we can set as map and not String (?) 
+                self.el.sceneEl.setAttribute('webxr', { 
+                    requiredFeatures: ourRequiredFeatures.join(','), 
+                    optionalFeatures: ourOptionalFeatures.join(',') 
+                });
             } else {
-                self.el.sceneEl.setAttribute('webxr', "requiredFeatures:local-floor");
+                // here, we assume we get and set as map and not String (?)
+                // remove existing optional features from our optional
+                existingFeatures.optionalFeatures.forEach(function (feature) {
+                    ourOptionalFeatures = ourOptionalFeatures.filter(function(value, index, arr){ return value != feature;});
+                });
+                // remove existing required features from our required
+                existingFeatures.requiredFeatures.forEach(function (feature) {
+                    ourRequiredFeatures = ourRequiredFeatures.filter(function(value, index, arr){ return value != feature;});
+                });
+                // remove our required features from existing optional
+                ourRequiredFeatures.forEach(function (feature) {
+                    existingFeatures.optionalFeatures = existingFeatures.optionalFeatures.filter(function(value, index, arr){ return value != feature;});
+                });
+                // add our required and optional features to the existing
+                existingFeatures.requiredFeatures = existingFeatures.requiredFeatures.concat(ourRequiredFeatures);
+                existingFeatures.optionalFeatures = existingFeatures.optionalFeatures.concat(ourOptionalFeatures);
+
+                self.el.sceneEl.setAttribute('webxr', existingFeatures);
             }
 
             self.el.sceneEl.setAttribute('vr-mode-ui', "enabled", "true");
