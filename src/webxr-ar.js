@@ -216,7 +216,7 @@ AFRAME.registerComponent('webxr-ar', {
                             pageX: e.inputSource.gamepad.axes[0],
                             pageY: e.inputSource.gamepad.axes[1]
                         }];
-                        window.dispatchEvent(event);
+                        self.el.sceneEl.canvas.dispatchEvent(event);
                     });
                 });
 
@@ -232,7 +232,7 @@ AFRAME.registerComponent('webxr-ar', {
                             pageX: e.inputSource.gamepad.axes[0],
                             pageY: e.inputSource.gamepad.axes[1]
                         }];
-                        window.dispatchEvent(event);
+                        self.el.sceneEl.canvas.dispatchEvent(event);
                     });
                 });
 
