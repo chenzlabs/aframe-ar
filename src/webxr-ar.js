@@ -256,7 +256,6 @@ AFRAME.registerComponent('webxr-ar', {
                         session.requestHitTestSource({space: self.viewerSpace})
                         .then((hitTestSource) => {
                             self.xrHitTestSource = hitTestSource;
-                            console.log('session requestHitTestSource OK');
                         })
                     }
                 });
@@ -322,7 +321,6 @@ AFRAME.registerComponent('webxr-ar', {
                     let pose = hitTestResults[i].getPose(this.refSpace);
                         transform.fromArray(pose.transform.matrix);
                         hitpoint.setFromMatrixPosition(transform); //transform.decompose(hitpoint, hitquat, hitscale);
-                        console.log(i, hitpoint);
                         raycasterEl.object3D.getWorldPosition(worldpos);
 
                         hitsToReturn.push({
