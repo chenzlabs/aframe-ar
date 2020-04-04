@@ -63,7 +63,7 @@
         <a-sphere position="0 0.5 0" scale="0.2 1 0.2"></a-sphere>
       </a-entity>`;
 
-      window.addEventListener('click', function () {
+      function markit(e) {
         // Put the logo where the mark is.
         var mark = document.querySelector('#mark');
         var el = document.createElement('a-entity');
@@ -71,7 +71,16 @@
         el.innerHTML = content;
         el.setAttribute('scale', '0.1, 0.1, 0.1');
         el.setAttribute('position', mark.getAttribute('position'));
-      });
+		var inner = el.querySelector('a-sphere');
+		if (e.type == 'touchstart') { inner.setAttribute('material', 'color:red;opacity:0.5'); }
+		if (e.type == 'touchend') { inner.setAttribute('material', 'color:green;opacity:0.5'); }
+		if (e.type == 'click') { inner.setAttribute('material', 'color:blue;opacity:0.5'); }
+      }
+
+	  window.addEventListener('touchstart', markit);
+	  window.addEventListener('touchend', markit);
+	  window.addEventListener('click', markit);
+
     </script>
   </head>
   <body>
