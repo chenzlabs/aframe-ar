@@ -1,6 +1,6 @@
 {
   "name": "aframe-ar",
-  "version": "0.2.1a",
+  "version": "0.3.0",
   "description": "Basic A-Frame support for the new three.ar.js library and WebARonARKit/Core browsers, as well as WebXR Viewer.",
   "main": "src/index.js",
   "scripts": {
