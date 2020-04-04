@@ -6,7 +6,7 @@ as well as [WebXR Viewer](https://blog.mozvr.com/experimenting-with-ar-and-the-w
 By simply adding the `ar` component to your [A-Frame](https://aframe.io) scene declaration:
 
 ```
-<a-scene ar="worldSensing:true">
+<a-scene ar>
 ...
 </a-scene>
 ```
@@ -22,7 +22,7 @@ Basic usage:
 
 <!-- Place the ar component on your scene, and the camera will use AR by default. -->
 <!-- Note that world sensing is required to use AR raycaster with WebXR Viewer on iOS. -->
-<a-scene ar="worldSensing:true">
+<a-scene ar>
   <a-sphere radius="0.01" position="0 0.005 -0.5"></a-sphere>
 <a-scene>  
 ```
