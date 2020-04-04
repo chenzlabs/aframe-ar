@@ -203,36 +203,50 @@ AFRAME.registerComponent('webxr-ar', {
             });
             self.el.sceneEl.renderer.xr.addEventListener('sessionstart', (ev) => {
                 let session = self.el.sceneEl.renderer.xr.getSession();
+                let el = self.el.sceneEl.canvas;
 
-                session.addEventListener('select', function (e) {
+                session.addEventListener('selectstart', function (e) {
                     // dispatch touchstart
+                    var pageX = e.inputSource.gamepad.axes[0];
+                    var pageY = e.inputSource.gamepad.axes[1];
                     setTimeout(() => {
                         var event = new TouchEvent('touchstart', {
                             view: window,
                             bubbles: true,
                             cancelable: true
                         });
-                        event.targetTouches = [{
-                            pageX: e.inputSource.gamepad.axes[0],
-                            pageY: e.inputSource.gamepad.axes[1]
-                        }];
-                        self.el.sceneEl.canvas.dispatchEvent(event);
+                        event.targetTouches = [{ pageX: pageX, pageY: pageY }];
+                        el.dispatchEvent(event);
                     });
                 });
 
                 session.addEventListener('selectend', function (e) {
                     // dispatch touchend
+                    var pageX = e.inputSource.gamepad.axes[0];
+                    var pageY = e.inputSource.gamepad.axes[1];
                     setTimeout(() => {
                         var event = new TouchEvent('touchend', {
                             view: window,
                             bubbles: true,
                             cancelable: true
                         });
-                        event.targetTouches = [{
-                            pageX: e.inputSource.gamepad.axes[0],
-                            pageY: e.inputSource.gamepad.axes[1]
-                        }];
-                        self.el.sceneEl.canvas.dispatchEvent(event);
+                        event.targetTouches = [{ pageX: pageX, pageY: pageY }];
+                        el.dispatchEvent(event);
+                    });
+                });
+
+                session.addEventListener('select', function (e) {
+                    // dispatch click
+                    var pageX = e.inputSource.gamepad.axes[0];
+                    var pageY = e.inputSource.gamepad.axes[1];
+                    setTimeout(() => {
+                        var event = new MouseEvent('click', { 
+                            clientX: pageX, 
+                            clientY: pageY, 
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        el.dispatchEvent(event);
                     });
                 });
 
