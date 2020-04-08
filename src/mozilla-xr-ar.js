@@ -160,6 +160,9 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         };
 
         // Need these because WebXR Viewer...
+        if (window['setNativeTime']) {
+          console.log('window handler already defined for ', 'setNativeTime');
+        } else
         window['setNativeTime'] = function (data) {
           window.nativeTime = data.nativeTime;
         };
@@ -171,6 +174,9 @@ AFRAME.registerComponent('mozilla-xr-ar', {
          'arkitInterruptionEnded',
          'arkitShowDebug',
          'onError'].forEach(function (eventName) {
+          if (window[eventName]) {
+            console.log('window handler already defined for ', eventName);
+          } else
           window[eventName] = function (data) {
             console.log(eventName + ':', data);
           };
@@ -189,12 +195,12 @@ AFRAME.registerComponent('mozilla-xr-ar', {
           self.emit('enter-vr', {target: self});
           // this caused Cardboard prompt, so hide it 
           vrmodeui.orientationModalEl.classList.add('a-hidden');
-/*
+
           // not sure these are necessary
           self.addFullScreenStyles();
           self.renderer.setAnimationLoop(self.render);
           self.resize();
-*/
+
           // Call initAR.
           window.webkit.messageHandlers.initAR.postMessage(data);          
         };
