@@ -349,7 +349,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                 extent: [element.plane_extent.x, element.plane_extent.z],
                 modelMatrix: element.transform,
                 alignment: element.plane_alignment,
-                vertices: convertVertices(element.geometry.vertices)
+                vertices: element.geometry.vertices
               });
             }else{
               var anchorData = {
@@ -387,14 +387,14 @@ AFRAME.registerComponent('mozilla-xr-ar', {
                   extent: [element.plane_extent.x, element.plane_extent.z],
                   modelMatrix: element.transform,
                   alignment: element.plane_alignment,
-                  vertices: convertVertices(element.geometry.vertices)
+                  vertices: element.geometry.vertices
                 });
               } else {
                 plane.center = element.plane_center;
                 plane.extent = [element.plane_extent.x, element.plane_extent.z];
                 plane.modelMatrix = element.transform;
                 plane.alignment = element.plane_alignment;
-                plane.vertices = convertVertices(element.geometry.vertices);
+                plane.vertices = element.geometry.vertices;
               }
             }else{
               var anchor = this.anchors_.get(element.uuid);
