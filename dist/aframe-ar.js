@@ -872,7 +872,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         if (!window.webkit.messageHandlers.watchAR) { return; }
 
         // Mozilla WebXR Viewer detected.
-        this.arDisplay = true;
+        var self = this;
+        self.arDisplay = true;
 
         // Compose data to use with watchAR.
         var data = {
@@ -902,7 +903,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             //sc.canvas.width = data.width * window.devicePixelRatio;
             //sc.canvas.height = data.height * window.devicePixelRatio;
             sc.camera.aspect = data.width / data.height;
-            sc.camera.updateProjectionMatrix();
+            sc.camera.projectionMatrix.copy(self.projectionMatrix); // updateProjectionMatrix();
 
             sc.renderer.setPixelRatio(1);
             sc.renderer.setSize(
