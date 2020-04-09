@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "browserify src/index.js -o examples/main.js",
-    "dev": "webpack-dev-server -d --mode=development --hot --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
+    "dev": "webpack-dev-server -d --mode=development --inline=false --hot=false --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
     "dist": "webpack src/index.js --mode=development -o dist/aframe-ar.js && webpack --devtool source-map -p src/index.js -o dist/aframe-ar.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
