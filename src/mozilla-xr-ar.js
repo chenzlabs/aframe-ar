@@ -126,15 +126,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         if (!window.webkit || !window.webkit.messageHandlers) { return; }
         if (!window.webkit.messageHandlers.initAR) { return; }
 
-        // Ugly hack to get around WebXR Viewer resizing issue.
-        setTimeout(function () {
-            var scene = AFRAME.scenes[0];
-            scene.canvas.style.position = "absolute !important";
-            scene.canvas.style.width = "100% !important";
-            scene.canvas.style.height = "100% !important";
-            setTimeout(function () { scene.resize(); });
-        }, 1000);
-
         window['arkitCallback' + 0] = this.onInit;
         window['arkitCallback' + 1] = this.onWatch;
 
@@ -160,23 +151,32 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         };
 
         // Need these because WebXR Viewer...
-        if (window['setNativeTime']) {
-          console.log('window handler already defined for ', 'setNativeTime');
-        } else
+        //if (window['setNativeTime']) {
+        //  console.log('window handler already defined for ', 'setNativeTime');
+        //} else
         window['setNativeTime'] = function (data) {
           window.nativeTime = data.nativeTime;
         };
-        ['arTrackingChanged',
-         'userGrantedWorldSensingData', // Needed for world sensing.
-         'arkitDidMoveBackground',
+        [
          'arkitStartRecording',
          'arkitStopRecording',
+         'arkitDidMoveBackground',
+         'arkitWillEnterForeground',
+         'arkitInterrupted',
          'arkitInterruptionEnded',
          'arkitShowDebug',
-         'onError'].forEach(function (eventName) {
-          if (window[eventName]) {
-            console.log('window handler already defined for ', eventName);
-          } else
+         // elsewhere... 'arkitWindowResize',
+         'onError',
+         'arTrackingChanged',
+         'ios_did_receive_memory_warning',
+         'onComputerVisionData',
+         // above... 'setNativeTime',
+         'userGrantedComputerVisionData',
+         'userGrantedWorldSensingData', // Needed for world sensing.
+        ].forEach(function (eventName) {
+          //if (window[eventName]) {
+          //  console.log('window handler already defined for ', eventName);
+          //} else
           window[eventName] = function (data) {
             console.log(eventName + ':', data);
           };
@@ -188,21 +188,50 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         vrmodeui.enterAREl.parentNode.replaceChild(newarbutton, vrmodeui.enterAREl);
         vrmodeui.enterAREl = newarbutton;
         vrmodeui.enterAREl.classList.remove('a-hidden');
+        var self = this;
         vrmodeui.enterAREl.onclick = function() {
-          var self = AFRAME.scenes[0];
-          self.addState('ar-mode');
-          self.addState('vr-mode');
-          self.emit('enter-vr', {target: self});
+          var scene = AFRAME.scenes[0];
+          scene.addState('ar-mode');
+          scene.addState('vr-mode');
+          scene.emit('enter-vr', {target: scene});
           // this caused Cardboard prompt, so hide it 
           vrmodeui.orientationModalEl.classList.add('a-hidden');
 
           // not sure these are necessary
-          self.addFullScreenStyles();
-          self.renderer.setAnimationLoop(self.render);
-          self.resize();
+          //scene.addFullScreenStyles();
+          //scene.renderer.setAnimationLoop(scene.render);
+          //scene.resize();
 
           // Call initAR.
-          window.webkit.messageHandlers.initAR.postMessage(data);          
+          window.webkit.messageHandlers.initAR.postMessage(data);
+            
+
+            // Take over the scene camera, if so directed.
+            // But wait a tick, because otherwise injected camera will not be present.
+            if (self.data.takeOverCamera) {
+                setTimeout(function () { self.takeOverCamera(scene.camera); });
+            }
+
+            let sz = new THREE.Vector2();
+            let pixelRatio = scene.renderer.getPixelRatio();
+            scene.renderer.getSize(sz);
+            console.log("pixelRatio ", pixelRatio, " size ", sz);
+/*            scene.renderer.setSize(sz * pixelRatio, sz * pixelRatio);
+            // Modify the scene renderer to allow ARView video passthrough.
+            scene.renderer.setPixelRatio(1);
+            scene.renderer.autoClear = false;
+            scene.renderer.setClearColor('#000', 0);
+            scene.renderer.alpha = true;
+/*
+            // Ugly hack to get around WebXR Viewer resizing issue.
+            setTimeout(function () {
+                var scene = AFRAME.scenes[0];
+                scene.canvas.style.position = "absolute !important";
+                scene.canvas.style.width = "100% !important";
+                scene.canvas.style.height = "100% !important";
+                setTimeout(function () { scene.resize(); });
+            }, 1000);
+*/
         };
     },
 
@@ -227,7 +256,9 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         };
 
         // Add resize handling.
-        window['arkitWindowResize'] = function () {
+        window['arkitWindowResize'] = function (data) {
+            console.log('arkitWindowResize' + ':', data);
+
             setTimeout(function() {
                 AFRAME.scenes[0].resize();
             }, 100);
@@ -235,23 +266,6 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         // Start watching AR.
         window.webkit.messageHandlers.watchAR.postMessage(data);
-
-        var self = this;
-
-        // The scene is loaded, so scene components etc. should be available.
-        var scene = self.el.sceneEl;
-
-        // Take over the scene camera, if so directed.
-        // But wait a tick, because otherwise injected camera will not be present.
-        if (self.data.takeOverCamera) {
-            setTimeout(function () { self.takeOverCamera(scene.camera); });
-        }
-
-        // Modify the scene renderer to allow ARView video passthrough.
-        scene.renderer.setPixelRatio(1);
-        scene.renderer.autoClear = false;
-        scene.renderer.setClearColor('#000', 0);
-        scene.renderer.alpha = true;
     },
 
     onInit: function (deviceId) {
