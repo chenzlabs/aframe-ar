@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "build": "browserify src/index.js -o examples/main.js",
-    "dev": "webpack-dev-server -d --mode=development --hot --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
-    "dist": "webpack src/index.js --mode=development -o dist/aframe-ar.js && webpack --devtool source-map -p src/index.js -o dist/aframe-ar.min.js",
+    "dev": "webpack-dev-server -d --mode=development --inline=false --hot=false --https --progress --useLocalIp --host 0.0.0.0 --port 8000 --content-base examples",
+    "dist": "webpack --devtool source-map -d src/index.js -o dist/aframe-ar.js && webpack --devtool source-map -p src/index.js -o dist/aframe-ar.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/chenzlabs/aframe-ar#readme",
   "devDependencies": {
-    "aframe": "aframevr/aframe#master",
+    "aframe": "github:aframevr/aframe#master",
     "browserify": "^13.0.0",
     "browserify-css": "^0.9.1",
     "budo": "^8.2.2",
@@ -77,5 +77,6 @@
       "examples/build.js",
       "dist/**"
     ]
-  }
+  },
+  "dependencies": {}
 }
