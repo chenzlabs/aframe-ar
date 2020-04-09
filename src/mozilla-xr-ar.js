@@ -260,8 +260,28 @@ AFRAME.registerComponent('mozilla-xr-ar', {
             console.log('arkitWindowResize' + ':', data);
 
             setTimeout(function() {
-                AFRAME.scenes[0].resize();
-            }, 100);
+
+//                AFRAME.scenes[0].resize();
+
+            // something is wacky with orientation change;
+            // I think the polyfill is broken
+            //
+            // crudely resize the canvas according to the data
+            var sc = AFRAME.scenes[0];
+            //sc.canvas.width = data.width * window.devicePixelRatio;
+            //sc.canvas.height = data.height * window.devicePixelRatio;
+            sc.camera.aspect = data.width / data.height;
+            sc.camera.updateProjectionMatrix();
+
+            sc.renderer.setPixelRatio(1);
+            sc.renderer.setSize(
+                data.width * window.devicePixelRatio,
+                data.height * window.devicePixelRatio,
+                false);
+
+            sc.components['vr-mode-ui'].orientationModalEl.classList.add('a-hidden');
+
+            }, 50);
         };
 
         // Start watching AR.
