@@ -7,7 +7,7 @@ AFRAME.registerComponent('ar', {
     worldSensing: {default: true},
     hideUI: {default: false}
   },
-  dependencies: ['webxr-ar', 'mozilla-xr-ar', 'ar-planes', 'ar-anchors'],
+  dependencies: ['webxr-ar', /*'mozilla-xr-ar',*/ 'ar-planes', 'ar-anchors'],
   getSource: function () {
     var whichar;
     if (!this.source) {
