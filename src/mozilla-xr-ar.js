@@ -91,6 +91,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         this.onInit = this.onInit.bind(this);
         this.onWatch = this.onWatch.bind(this);
 
+        this.forceResize = this.forceResize.bind(this);
+
         this.poseMatrix = new THREE.Matrix4();
         this.posePosition = new THREE.Vector3();
         this.poseQuaternion = new THREE.Quaternion();
@@ -224,12 +226,32 @@ AFRAME.registerComponent('mozilla-xr-ar', {
           scene.canvas.style.width = "100% !important";
           scene.canvas.style.height = "100% !important";
 
-          // Force resize.
-          scene.removeState('vr-mode');
-          scene.resize();
-          scene.addState('vr-mode');
-          //scene.camera.projectionMatrix.copy(self.projectionMatrix);
+          // Force resize after we have access to data (?!)
+          window.userGrantedWorldSensingData = function(data) {
+           console.log('userGrantedWorldSensingData:', data);
+           setTimeout(function () {
+            self.forceResize(
+              screen.width * window.devicePixelRatio,
+              screen.height * window.devicePixelRatio);
+           }, 100); // 1000 seems to be long enough initially
+          };
         };
+    },
+
+    forceResize: function (sx, sy) {
+        var sc = this.el.sceneEl, self = this;
+        console.log('forceResize ', sx, sy,
+             ' was ', 
+             sc.canvas.width, sc.canvas.height, 
+             screen.width, screen.height,
+             window.devicePixelRatio, sc.renderer.getPixelRatio());
+        sx = sx || this.forceResizeX; this.forceResizeX = sx;
+        sy = sy || this.forceResizeY; this.forceResizeY = sy;
+        sc.canvas.setAttribute('width', sx);
+        sc.canvas.setAttribute('height', sy);
+        sc.renderer.setPixelRatio(1);
+        sc.camera.projectionMatrix.copy(self.projectionMatrix);
+        sc.emit('rendererresize', null, false);
     },
 
     checkForARDisplay: function () {
@@ -263,13 +285,10 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
           // on iOS, AFRAME waits 100ms... 
           setTimeout(function () {
-            var sc = AFRAME.scenes[0];
-            // Force resize.
-            sc.removeState('vr-mode');
-            sc.resize();
-            sc.addState('vr-mode');
-            //sc.camera.projectionMatrix.copy(self.projectionMatrix);
-          }, 100);
+            self.forceResize(
+              data.width * window.devicePixelRatio,
+              data.height * window.devicePixelRatio);
+          }, 150); // 250 seems to be long enough
         };
 
         // Start watching AR.
