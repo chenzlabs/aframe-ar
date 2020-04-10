@@ -91,6 +91,8 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         this.onInit = this.onInit.bind(this);
         this.onWatch = this.onWatch.bind(this);
 
+        this.forceResize = this.forceResize.bind(this);
+
         this.poseMatrix = new THREE.Matrix4();
         this.posePosition = new THREE.Vector3();
         this.poseQuaternion = new THREE.Quaternion();
@@ -191,48 +193,65 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         var self = this;
         vrmodeui.enterAREl.onclick = function() {
           var scene = AFRAME.scenes[0];
+
+          // Note we're in AR mode (the way WebXR handling does).
           scene.addState('ar-mode');
+
+          // Kill the Cardboard display that gets in our way.
+          scene.components['vr-mode-ui'].orientationModalEl.style='display:none!important';
+
+          // Fake VR mode from enterVRSuccess.
           scene.addState('vr-mode');
           scene.emit('enter-vr', {target: scene});
-          // this caused Cardboard prompt, so hide it 
-          vrmodeui.orientationModalEl.classList.add('a-hidden');
-
-          // not sure these are necessary
-          //scene.addFullScreenStyles();
-          //scene.renderer.setAnimationLoop(scene.render);
-          //scene.resize();
 
           // Call initAR.
           window.webkit.messageHandlers.initAR.postMessage(data);
             
+          // Kill broken wakelock!
+          scene.wakelock.release();
 
-            // Take over the scene camera, if so directed.
-            // But wait a tick, because otherwise injected camera will not be present.
-            if (self.data.takeOverCamera) {
-                setTimeout(function () { self.takeOverCamera(scene.camera); });
-            }
+          // Take over the scene camera, if so directed.
+          // But wait a tick, because otherwise injected camera will not be present.
+          if (self.data.takeOverCamera) {
+            setTimeout(function () { self.takeOverCamera(scene.camera); });
+          }
 
-            let sz = new THREE.Vector2();
-            let pixelRatio = scene.renderer.getPixelRatio();
-            scene.renderer.getSize(sz);
-            console.log("pixelRatio ", pixelRatio, " size ", sz);
-/*            scene.renderer.setSize(sz * pixelRatio, sz * pixelRatio);
-            // Modify the scene renderer to allow ARView video passthrough.
-            scene.renderer.setPixelRatio(1);
-            scene.renderer.autoClear = false;
-            scene.renderer.setClearColor('#000', 0);
-            scene.renderer.alpha = true;
-/*
-            // Ugly hack to get around WebXR Viewer resizing issue.
-            setTimeout(function () {
-                var scene = AFRAME.scenes[0];
-                scene.canvas.style.position = "absolute !important";
-                scene.canvas.style.width = "100% !important";
-                scene.canvas.style.height = "100% !important";
-                setTimeout(function () { scene.resize(); });
-            }, 1000);
-*/
+          let sz = new THREE.Vector2();
+          let pixelRatio = scene.renderer.getPixelRatio();
+          scene.renderer.getSize(sz);
+          console.log("pixelRatio ", pixelRatio, " size ", sz);
+
+          // Ugly hack to get around WebXR Viewer resizing issue.
+          scene.canvas.style.position = "absolute !important";
+          scene.canvas.style.width = "100% !important";
+          scene.canvas.style.height = "100% !important";
+
+          // Force resize after we have access to data (?!)
+          window.userGrantedWorldSensingData = function(data) {
+           console.log('userGrantedWorldSensingData:', data);
+           setTimeout(function () {
+            self.forceResize(
+              screen.width * window.devicePixelRatio,
+              screen.height * window.devicePixelRatio);
+           }, 100); // 1000 seems to be long enough initially
+          };
         };
+    },
+
+    forceResize: function (sx, sy) {
+        var sc = this.el.sceneEl, self = this;
+        console.log('forceResize ', sx, sy,
+             ' was ', 
+             sc.canvas.width, sc.canvas.height, 
+             screen.width, screen.height,
+             window.devicePixelRatio, sc.renderer.getPixelRatio());
+        sx = sx || this.forceResizeX; this.forceResizeX = sx;
+        sy = sy || this.forceResizeY; this.forceResizeY = sy;
+        sc.canvas.setAttribute('width', sx);
+        sc.canvas.setAttribute('height', sy);
+        sc.renderer.setPixelRatio(1);
+        sc.camera.projectionMatrix.copy(self.projectionMatrix);
+        sc.emit('rendererresize', null, false);
     },
 
     checkForARDisplay: function () {
@@ -243,6 +262,7 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // Mozilla WebXR Viewer detected.
         var self = this;
         self.arDisplay = true;
+
 
         // Compose data to use with watchAR.
         var data = {
@@ -258,31 +278,17 @@ AFRAME.registerComponent('mozilla-xr-ar', {
 
         // Add resize handling.
         window['arkitWindowResize'] = function (data) {
-            console.log('arkitWindowResize' + ':', data);
+          console.log('arkitWindowResize' + ':', data);
 
-            setTimeout(function() {
+          // we're faking being in vr-mode anyway so resize will exit.
+          //window.emit('resize', {target: window});
 
-//                AFRAME.scenes[0].resize();
-
-            // something is wacky with orientation change;
-            // I think the polyfill is broken
-            //
-            // crudely resize the canvas according to the data
-            var sc = AFRAME.scenes[0];
-            //sc.canvas.width = data.width * window.devicePixelRatio;
-            //sc.canvas.height = data.height * window.devicePixelRatio;
-            sc.camera.aspect = data.width / data.height;
-            sc.camera.projectionMatrix.copy(self.projectionMatrix); // updateProjectionMatrix();
-
-            sc.renderer.setPixelRatio(1);
-            sc.renderer.setSize(
-                data.width * window.devicePixelRatio,
-                data.height * window.devicePixelRatio,
-                false);
-
-            sc.components['vr-mode-ui'].orientationModalEl.classList.add('a-hidden');
-
-            }, 50);
+          // on iOS, AFRAME waits 100ms... 
+          setTimeout(function () {
+            self.forceResize(
+              data.width * window.devicePixelRatio,
+              data.height * window.devicePixelRatio);
+          }, 150); // 250 seems to be long enough
         };
 
         // Start watching AR.
