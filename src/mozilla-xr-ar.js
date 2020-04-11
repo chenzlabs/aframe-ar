@@ -249,8 +249,10 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         sy = sy || this.forceResizeY; this.forceResizeY = sy;
         sc.canvas.setAttribute('width', sx);
         sc.canvas.setAttribute('height', sy);
-        sc.renderer.setPixelRatio(1);
+        sc.camera.aspect = sx / sy;
         sc.camera.projectionMatrix.copy(self.projectionMatrix);
+        sc.renderer.setPixelRatio(1);
+        sc.renderer.setSize(sx, sy, false);
         sc.emit('rendererresize', null, false);
     },
 
