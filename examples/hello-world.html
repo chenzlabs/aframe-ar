@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Hello, World! • A-Frame ar</title>
     <meta name="description" content="Hello, World! • A-Frame three.ar.js">
-    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/chenzlabs/aframe@handle-missing-rotationrate-dist/dist/aframe-master.min.js"></script>
     <script src="main.js"></script>
   </head>
   <body>
@@ -14,5 +14,27 @@
       <a-cylinder scale="0.25 0.25 0.25" position="0.25 0.1875 -0.75" radius="0.5" height="1.5" color="#FFC65D" shadow></a-cylinder>
       <a-plane scale="0.25 0.25 0.25" position="0 0 -1" rotation="-90 0 0" width="4" height="4" color="#7BC8A4" shadow></a-plane>
     </a-scene>
+
+    <script>
+
+    window.tenSecondTouch = function () {
+      AFRAME.scenes[0].exitVR();
+    };
+    
+    window.addEventListener('touchend'/*'click'*/, function() {
+      if (window.lastTouchStartTimer != undefined) {
+        clearTimeout(window.lastTouchStartTimer);
+      }
+      window.lastTouchStartTimer = undefined
+    });
+    
+    window.addEventListener('touchstart'/*'click'*/, function() {
+      if (window.lastTouchStartTimer != undefined) {
+        clearTimeout(window.lastTouchStartTimer);
+      }
+      window.lastTouchStartTimer = setTimeout(window.tenSecondTouch, 10*1000);
+    });
+
+    </script>
   </body>
 </html>
