@@ -184,13 +184,29 @@ AFRAME.registerComponent('mozilla-xr-ar', {
           };
         });
 
+        var self = this;
+
+        self.el.addEventListener('exit-vr', function (data) {
+          // tell WebXR Viewer to stop
+          // FIXME: well, no, that's too much, camera tracking stops.
+          window.webkit.messageHandlers.stopAR.postMessage({});
+          // release ar-camera
+          if (self.data.takeOverCamera && self.arCamera) {
+            self.arCamera.el.setAttribute('ar-camera', 'enabled', false);
+          }
+          // turn AR button back on
+          setTimeout(function () {
+            var vrmodeui = self.el.sceneEl.components['vr-mode-ui'];
+            vrmodeui.enterAREl.classList.remove('a-hidden');
+          });
+        });
+
         // act like Chrome WebXR by forcibly showing AR button and making it work
         var vrmodeui = this.el.sceneEl.components['vr-mode-ui'];
         var newarbutton = vrmodeui.enterAREl.cloneNode(true);
         vrmodeui.enterAREl.parentNode.replaceChild(newarbutton, vrmodeui.enterAREl);
         vrmodeui.enterAREl = newarbutton;
         vrmodeui.enterAREl.classList.remove('a-hidden');
-        var self = this;
         vrmodeui.enterAREl.onclick = function() {
           var scene = AFRAME.scenes[0];
 
