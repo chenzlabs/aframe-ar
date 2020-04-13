@@ -1,6 +1,6 @@
 {
   "name": "aframe-ar",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Basic A-Frame support for browser-based augmented reality (AR), supporting the new WebXR AR support in Chrome v81+ as well as WebXR Viewer.",
   "main": "src/index.js",
   "scripts": {
