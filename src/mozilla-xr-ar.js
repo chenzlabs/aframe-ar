@@ -78,8 +78,6 @@ return base64
 
 
 
-
-
 AFRAME.registerComponent('mozilla-xr-ar', {
     schema: {
         takeOverCamera: {default: true},
@@ -261,13 +259,35 @@ AFRAME.registerComponent('mozilla-xr-ar', {
              sc.canvas.width, sc.canvas.height, 
              screen.width, screen.height,
              window.devicePixelRatio, sc.renderer.getPixelRatio());
+
+  var pixelRatio = sc.renderer.getPixelRatio();
+  var maxSize = sc.maxCanvasSize;
+  if (sx * pixelRatio > maxSize.width ||
+    sy * pixelRatio > maxSize.height) {
+
+    console.log('applying maxSize constraints ', maxSize);
+
+    aspectRatio = sx / sy;
+
+    if ((sx * pixelRatio) > maxSize.width && maxSize.width !== -1) {
+      sx = Math.round(maxSize.width / pixelRatio);
+      sy = Math.round(maxSize.width / aspectRatio / pixelRatio);
+    }
+
+    if ((sy * pixelRatio) > maxSize.height && maxSize.height !== -1) {
+      sy = Math.round(maxSize.height / pixelRatio);
+      sx = Math.round(maxSize.height * aspectRatio / pixelRatio);
+    }
+
+    console.log('applied maxSize constraints ', sx, sy, maxSize);
+  }
+
         sx = sx || this.forceResizeX; this.forceResizeX = sx;
         sy = sy || this.forceResizeY; this.forceResizeY = sy;
         sc.canvas.setAttribute('width', sx);
         sc.canvas.setAttribute('height', sy);
         sc.camera.aspect = sx / sy;
         sc.camera.projectionMatrix.copy(self.projectionMatrix);
-        sc.renderer.setPixelRatio(1);
         sc.renderer.setSize(sx, sy, false);
         sc.emit('rendererresize', null, false);
     },
