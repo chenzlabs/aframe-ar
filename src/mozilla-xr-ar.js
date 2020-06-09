@@ -126,6 +126,9 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         if (!window.webkit || !window.webkit.messageHandlers) { return; }
         if (!window.webkit.messageHandlers.initAR) { return; }
 
+        // If we are the new version 2.0, don't use this!
+        if (navigator.userAgent.indexOf('Mobile WebXRViewer/v1.') < 0) { return; }
+
         window['arkitCallback' + 0] = this.onInit;
         window['arkitCallback' + 1] = this.onWatch;
 
@@ -296,6 +299,9 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         // Check if the low-level WebXR Viewer interfaces are there.
         if (!window.webkit || !window.webkit.messageHandlers) { return; }
         if (!window.webkit.messageHandlers.watchAR) { return; }
+
+        // If we are the new version 2.0, don't use this!
+        if (navigator.userAgent.indexOf('Mobile WebXRViewer/v1.') < 0) { return; }
 
         // Mozilla WebXR Viewer detected.
         var self = this;
