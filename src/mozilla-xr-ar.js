@@ -127,7 +127,18 @@ AFRAME.registerComponent('mozilla-xr-ar', {
         if (!window.webkit.messageHandlers.initAR) { return; }
 
         // If we are the new version 2.0, don't use this!
-        if (navigator.userAgent.indexOf('Mobile WebXRViewer/v1.') < 0) { return; }
+        if (navigator.userAgent.indexOf('Mobile WebXRViewer/v1.') < 0) {
+/*
+          // FIXME: sure but we do need a wakelock, and camera position is wrong with the new version
+          // sigh, we do still need the wakelock killer
+          var scene = this.el.sceneEl;
+          scene.addEventListener('enter-vr', function (data) {
+            // Kill broken wakelock, but wait a tick for it to be created!
+            setTimeout(function () { if (scene.wakelock) { scene.wakelock.release(); }});
+          });
+*/
+          return;
+        }
 
         window['arkitCallback' + 0] = this.onInit;
         window['arkitCallback' + 1] = this.onWatch;
