@@ -37,18 +37,14 @@ Basic AR camera: https://aframe-ar.glitch.me
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
 - NOTE: WebXR support for planes is still a work in progress, and this may not work yet with Mozilla's 2.0 version.
+  At time of writing, Chrome appears to need chrome://flags#webxr-incubations enabled for plane support.
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
 
 Remix of xr-horses: https://aframe-ar-horses.glitch.me
 - (as seen at https://twitter.com/milk/status/1244680165969383425?s=20)
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-horses)
 
-TODO updates:
-
-https://aframe-ar-dragonites.glitch.me with many thanks to Twitter user @uveavanto et al.
-- (as seen at https://twitter.com/machenmusik/status/915692630926938112)
-- (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-dragonites?path=index.html)
-- NOTE: WebXR Viewer does not appear to fully support this example.
+(Unfortunately aframe-ar-dragonites is now broken, apologies!)
 
 Reference links:
 
