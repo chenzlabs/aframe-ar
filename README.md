@@ -37,7 +37,7 @@ Basic AR camera: https://aframe-ar.glitch.me
 
 Plane detection and visualization: https://aframe-ar-plane.glitch.me
 - NOTE: WebXR support for planes is still a work in progress, and this may not work yet with Mozilla's 2.0 version.
-  At time of writing, Chrome appears to need chrome://flags#webxr-incubations enabled for plane support.
+  At time of writing, Chrome appears to need `chrome://flags#webxr-incubations` enabled for plane support.
 - (remix with Glitch here: https://glitch.com/edit/#!/remix/aframe-ar-plane?path=index.html)
 
 Remix of xr-horses: https://aframe-ar-horses.glitch.me
